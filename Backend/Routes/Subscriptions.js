@@ -58,7 +58,7 @@ const authenticateUser = async (req, res, next) => {
  */
 router.post('/process-emails', authenticateUser, async (req, res) => {
   try {
-    const maxResults = parseInt(req.query.maxResults) || 50;
+    const maxResults = parseInt(req.query.maxResults) || 500;
     const userId = req.user._id;
 
     console.log(`[process-emails] Starting email processing for user: ${req.user.email}`);
@@ -176,8 +176,8 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
       });
     }
 
-    // Get list of already processed email IDs for this user
-    const processedEmailIds = await ProcessedEmail.find({ userId })
+    // Get list of already processed email IDs for this user (skip processed ones, allow retry of skipped/failed)
+    const processedEmailIds = await ProcessedEmail.find({ userId, status: 'processed' })
       .select('emailId')
       .lean();
     const processedIdsSet = new Set(processedEmailIds.map(p => p.emailId));
@@ -193,7 +193,7 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
 
     for (const email of emails) {
       try {
-        // Skip if email was already processed
+        // Skip if email was already successfully processed
         if (processedIdsSet.has(email.id)) {
           alreadyProcessed++;
           continue;
@@ -204,12 +204,12 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
 
         // Step 3b & 4: Validate AI output
         if (!extractedData) {
-          // Mark as skipped
-          await ProcessedEmail.create({
-            userId,
-            emailId: email.id,
-            status: 'skipped'
-          });
+          // Mark as skipped (upsert to avoid duplicate key errors)
+          await ProcessedEmail.updateOne(
+            { userId, emailId: email.id },
+            { $set: { status: 'skipped' } },
+            { upsert: true }
+          );
           skipped++;
           continue; // Not a subscription email or invalid
         }
@@ -217,13 +217,24 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
         // Validate required fields
         if (!extractedData.serviceName || !extractedData.eventType) {
           // Mark as skipped
-          await ProcessedEmail.create({
-            userId,
-            emailId: email.id,
-            status: 'skipped'
-          });
+          await ProcessedEmail.updateOne(
+            { userId, emailId: email.id },
+            { $set: { status: 'skipped' } },
+            { upsert: true }
+          );
           skipped++;
           continue; // Incomplete data
+        }
+
+        // Reject $0 subscriptions - these are not real paid subscriptions
+        if (extractedData.eventType !== 'cancellation' && (!extractedData.amount || extractedData.amount <= 0)) {
+          await ProcessedEmail.updateOne(
+            { userId, emailId: email.id },
+            { $set: { status: 'skipped' } },
+            { upsert: true }
+          );
+          skipped++;
+          continue;
         }
 
         // Step 5 & 6: Process and save subscription
@@ -236,13 +247,12 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
           }
         );
 
-        // Mark email as processed
-        await ProcessedEmail.create({
-          userId,
-          emailId: email.id,
-          status: 'processed',
-          subscriptionId: subscription._id
-        });
+        // Mark email as processed (upsert to avoid duplicate key errors)
+        await ProcessedEmail.updateOne(
+          { userId, emailId: email.id },
+          { $set: { status: 'processed', subscriptionId: subscription._id } },
+          { upsert: true }
+        );
 
         // Track actions
         processed++;
@@ -260,25 +270,24 @@ router.post('/process-emails', authenticateUser, async (req, res) => {
           emailId: email.id,
           error: error.message
         });
-        
-        // Mark as failed
-        try {
-          await ProcessedEmail.create({
-            userId,
-            emailId: email.id,
-            status: 'failed'
-          });
-        } catch (saveError) {
-          // Ignore duplicate key errors (email already marked)
-        }
-        
+
+        // Mark as failed (upsert to avoid duplicate key errors)
+        await ProcessedEmail.updateOne(
+          { userId, emailId: email.id },
+          { $set: { status: 'failed' } },
+          { upsert: true }
+        );
+
         skipped++;
       }
     }
 
-    // Update last scan date
-    user.lastEmailScanDate = new Date();
-    await user.save();
+    // Only update last scan date if there were no failures
+    // If emails failed, keep the old scan date so they get re-fetched next time
+    if (errors.length === 0) {
+      user.lastEmailScanDate = new Date();
+      await user.save();
+    }
 
     res.status(200).json({
       success: true,

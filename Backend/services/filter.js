@@ -128,8 +128,23 @@ function parseEmailData(messageData) {
 
   extractBody(messageData.payload);
 
-  // Use plain text body, fallback to HTML if no plain text
-  const emailBody = body || htmlBody;
+  // Use plain text body, fallback to stripped HTML if no plain text
+  let emailBody = body;
+  if (!emailBody && htmlBody) {
+    // Strip HTML tags to get clean text for AI processing
+    emailBody = htmlBody
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // Remove style blocks
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')  // Remove script blocks
+      .replace(/<[^>]+>/g, ' ')                           // Remove all HTML tags
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\s+/g, ' ')                              // Collapse whitespace
+      .trim();
+  }
 
   return {
     id: messageData.id,

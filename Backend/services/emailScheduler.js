@@ -59,7 +59,7 @@ async function processUserEmails(user) {
     while (retryCount <= maxRetries) {
       try {
         emails = await getSubscriptionEmails(oauth2Client, {
-          maxResults: 50,
+          maxResults: 500,
           query: emailQuery
         });
         console.log(`[emailScheduler] Successfully fetched ${emails.length} emails for user: ${user.email}`);

@@ -52,7 +52,7 @@ export const authAPI = {
 
 // Subscriptions API
 export const subscriptionsAPI = {
-  processEmails: (maxResults = 50) => 
+  processEmails: (maxResults = 500) =>
     api.post(`/subscriptions/process-emails?maxResults=${maxResults}`),
   getAll: (status) => {
     const url = status ? `/subscriptions?status=${status}` : '/subscriptions';

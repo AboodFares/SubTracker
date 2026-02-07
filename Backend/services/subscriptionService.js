@@ -8,11 +8,15 @@ const Subscription = require('../models/Subscription');
  */
 async function findExistingSubscription(userId, companyName) {
   try {
+    // Extract the base brand name (first word or known brand)
+    // This handles cases like "Crave" matching "Crave Standard With Ads"
+    const baseName = companyName.trim().split(/\s+/)[0];
+    const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     const subscription = await Subscription.findOne({
       userId: userId,
-      companyName: { $regex: new RegExp(`^${companyName}$`, 'i') }, // Case-insensitive match
-      status: 'active'
-    });
+      companyName: { $regex: new RegExp(escapedBase, 'i') } // Fuzzy match on base brand name
+    }).sort({ updatedAt: -1 }); // Get the most recently updated one
     return subscription;
   } catch (error) {
     console.error('Error finding existing subscription:', error);
@@ -116,8 +120,9 @@ async function processSubscriptionData(userId, extractedData, emailInfo) {
   try {
     const { eventType, serviceName, amount, currency, startDate, nextBillingDate, cancellationDate, planName } = extractedData;
 
-    // Parse dates
-    const parsedStartDate = startDate ? new Date(startDate) : new Date();
+    // Parse dates - use email date as fallback instead of today's date
+    const emailDate = emailInfo.date ? new Date(emailInfo.date) : new Date();
+    const parsedStartDate = startDate ? new Date(startDate) : emailDate;
     const parsedNextRenewal = nextBillingDate ? new Date(nextBillingDate) : null;
     const parsedCancellationDate = cancellationDate ? new Date(cancellationDate) : null;
 
