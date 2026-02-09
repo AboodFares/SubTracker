@@ -18,7 +18,22 @@ const SUBSCRIPTION_KEYWORDS = [
   'membership',
   'monthly',
   'yearly',
-  'trial'
+  'trial',
+  'cancel',
+  'cancelled',
+  'canceled',
+  'cancellation',
+  'recurring',
+  'annual',
+  'annually',
+  'weekly',
+  'upgrade',
+  'downgrade',
+  'refund',
+  'refunded',
+  'expired',
+  'expiring',
+  'auto-renew'
 ];
 
 /**
@@ -170,9 +185,22 @@ async function getSubscriptionEmails(oauth2Client, options = {}) {
   try {
     // Fetch emails matching keywords
     const emails = await fetchSubscriptionEmails(oauth2Client, options);
-    
+
+    // Filter out promotional emails — Gmail's Promotions category is almost always
+    // marketing/ads, never real subscription confirmations. This prevents false positives
+    // from emails like "Get DashPass for $0!" or "Try Premium for €29.99/month!"
+    const filtered = emails.filter(email => {
+      if (email.labels && email.labels.includes('CATEGORY_PROMOTIONS')) {
+        console.log(`[filter] Skipping promotional email: ${email.subject}`);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`[filter] ${emails.length} emails fetched, ${emails.length - filtered.length} promotional skipped, ${filtered.length} sent to AI`);
+
     // Return simplified format with just text content for AI
-    return emails.map(email => ({
+    return filtered.map(email => ({
       id: email.id,
       subject: email.subject,
       from: email.from,

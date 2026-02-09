@@ -98,12 +98,14 @@ const aiRoutes = require('./Routes/AI');
 const subscriptionRoutes = require('./Routes/Subscriptions');
 const bankRoutes = require('./Routes/Bank');
 const potentialSubscriptionsRoutes = require('./Routes/PotentialSubscriptions');
+const statementRoutes = require('./Routes/StatementUpload');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/bank', bankRoutes);
 app.use('/api/potential-subscriptions', potentialSubscriptionsRoutes);
+app.use('/api/statements', statementRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

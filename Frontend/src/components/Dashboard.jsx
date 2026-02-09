@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { subscriptionsAPI } from '../services/api';
 import SubscriptionList from './SubscriptionList';
 import BankConnection from './BankConnection';
+import StatementUpload from './StatementUpload';
 import Footer from './Footer';
 import { format, differenceInDays, isAfter } from 'date-fns';
 
@@ -18,7 +19,7 @@ const Dashboard = () => {
   const [filter, setFilter] = useState('all'); // all, active, cancelled
   const [viewMode, setViewMode] = useState('table'); // table, card
   const [emailsProcessed, setEmailsProcessed] = useState(false);
-  const [activeTab, setActiveTab] = useState('subscriptions'); // subscriptions, bank
+  const [activeTab, setActiveTab] = useState('subscriptions'); // subscriptions, bank, statements
 
   // Auto-process emails on component mount (after login)
   useEffect(() => {
@@ -413,6 +414,16 @@ const Dashboard = () => {
             >
               Bank Account
             </button>
+            <button
+              onClick={() => setActiveTab('statements')}
+              className={`flex-1 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-200 ${
+                activeTab === 'statements'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              Bank Statements
+            </button>
           </div>
         </div>
 
@@ -436,6 +447,10 @@ const Dashboard = () => {
 
         {activeTab === 'bank' && (
           <BankConnection />
+        )}
+
+        {activeTab === 'statements' && (
+          <StatementUpload />
         )}
       </main>
       <Footer />

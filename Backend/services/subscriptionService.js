@@ -60,18 +60,22 @@ async function createSubscription(data) {
  */
 async function updateSubscription(subscriptionId, updateData) {
   try {
+    const setFields = {
+      price: updateData.price,
+      currency: updateData.currency,
+      nextRenewalDate: updateData.nextRenewalDate,
+      planName: updateData.planName,
+      sourceEmailId: updateData.sourceEmailId,
+      sourceEmailDate: updateData.sourceEmailDate
+    };
+    // Allow reactivating cancelled subscriptions on renewal
+    if (updateData.status) setFields.status = updateData.status;
+    if (updateData.cancellationDate !== undefined) setFields.cancellationDate = updateData.cancellationDate;
+    if (updateData.accessEndDate !== undefined) setFields.accessEndDate = updateData.accessEndDate;
+
     const subscription = await Subscription.findByIdAndUpdate(
       subscriptionId,
-      {
-        $set: {
-          price: updateData.price,
-          currency: updateData.currency,
-          nextRenewalDate: updateData.nextRenewalDate,
-          planName: updateData.planName,
-          sourceEmailId: updateData.sourceEmailId,
-          sourceEmailDate: updateData.sourceEmailDate
-        }
-      },
+      { $set: setFields },
       { new: true, runValidators: true }
     );
     return subscription;
@@ -129,19 +133,37 @@ async function processSubscriptionData(userId, extractedData, emailInfo) {
     // Find existing subscription
     const existingSubscription = await findExistingSubscription(userId, serviceName);
 
+    // Skip if this email is OLDER than the one that last updated the subscription
+    // This prevents older emails from overwriting newer data (Gmail returns newest first)
+    // Exception: cancellation events use their own date check (cancellationDate vs sourceEmailDate)
+    if (existingSubscription && existingSubscription.sourceEmailDate && emailDate && eventType !== 'cancellation') {
+      const existingEmailDate = new Date(existingSubscription.sourceEmailDate);
+      if (emailDate < existingEmailDate) {
+        // Older email — don't overwrite, just return existing subscription
+        return existingSubscription;
+      }
+    }
+
     switch (eventType) {
       case 'start':
         // Create new subscription
         if (existingSubscription) {
           // If subscription already exists, update it instead
-          return await updateSubscription(existingSubscription._id, {
+          const startUpdate = {
             price: amount || existingSubscription.price,
             currency: currency || existingSubscription.currency,
             nextRenewalDate: parsedNextRenewal,
             planName: planName,
             sourceEmailId: emailInfo.id,
             sourceEmailDate: emailInfo.date ? new Date(emailInfo.date) : new Date()
-          });
+          };
+          // A start event means the subscription is active — reactivate if cancelled
+          if (existingSubscription.status === 'cancelled') {
+            startUpdate.status = 'active';
+            startUpdate.cancellationDate = null;
+            startUpdate.accessEndDate = null;
+          }
+          return await updateSubscription(existingSubscription._id, startUpdate);
         }
         return await createSubscription({
           userId,
@@ -159,14 +181,21 @@ async function processSubscriptionData(userId, extractedData, emailInfo) {
       case 'renewal':
         // Update existing subscription with renewal info
         if (existingSubscription) {
-          return await updateSubscription(existingSubscription._id, {
+          const renewalUpdate = {
             price: amount || existingSubscription.price,
             currency: currency || existingSubscription.currency,
             nextRenewalDate: parsedNextRenewal,
             planName: planName || existingSubscription.planName,
             sourceEmailId: emailInfo.id,
             sourceEmailDate: emailInfo.date ? new Date(emailInfo.date) : new Date()
-          });
+          };
+          // A renewal means the subscription is active — reactivate if cancelled
+          if (existingSubscription.status === 'cancelled') {
+            renewalUpdate.status = 'active';
+            renewalUpdate.cancellationDate = null;
+            renewalUpdate.accessEndDate = null;
+          }
+          return await updateSubscription(existingSubscription._id, renewalUpdate);
         }
         // If no existing subscription, create one (renewal email might be first email we see)
         return await createSubscription({
@@ -185,6 +214,15 @@ async function processSubscriptionData(userId, extractedData, emailInfo) {
       case 'cancellation':
         // Mark subscription as cancelled
         if (existingSubscription) {
+          // Only cancel if the cancellation happened AFTER the last known subscription event
+          // This prevents old cancellations from overriding a resubscription
+          if (existingSubscription.sourceEmailDate && parsedCancellationDate) {
+            const lastEventDate = new Date(existingSubscription.sourceEmailDate);
+            if (parsedCancellationDate < lastEventDate) {
+              // Cancellation is older than the latest event (user resubscribed after cancelling)
+              return existingSubscription;
+            }
+          }
           return await cancelSubscription(existingSubscription._id, {
             cancellationDate: parsedCancellationDate || new Date(),
             accessEndDate: parsedCancellationDate || new Date(),

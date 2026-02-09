@@ -97,5 +97,21 @@ export const bankAPI = {
   disconnect: () => bankApi.delete('/bank/disconnect'),
 };
 
+// Statements API - bank statement PDF upload
+export const statementsAPI = {
+  upload: (file) => {
+    const formData = new FormData();
+    formData.append('statement', file);
+    return api.post('/statements/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+  },
+  getAll: () => api.get('/statements'),
+  addSubscription: (statementId, subscriptionIndex) =>
+    api.post(`/statements/${statementId}/subscriptions/${subscriptionIndex}/add`),
+  delete: (statementId) => api.delete(`/statements/${statementId}`),
+};
+
 export default api;
 

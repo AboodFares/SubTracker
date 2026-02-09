@@ -27,6 +27,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "openai": "^6.15.0",
+    "pdf-parse": "^1.1.1",
     "plaid": "^41.0.0",
     "stripe": "^20.1.0"
   }
