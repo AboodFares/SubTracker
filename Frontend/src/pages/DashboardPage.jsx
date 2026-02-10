@@ -57,6 +57,12 @@ const DashboardPage = () => {
     return daysUntil >= 0 && daysUntil <= 30;
   }).sort((a, b) => new Date(a.nextRenewalDate) - new Date(b.nextRenewalDate));
 
+  const urgentRenewals = activeSubscriptions.filter(sub => {
+    if (!sub.nextRenewalDate) return false;
+    const daysUntil = differenceInDays(new Date(sub.nextRenewalDate), new Date());
+    return daysUntil >= 0 && daysUntil <= 5;
+  }).sort((a, b) => new Date(a.nextRenewalDate) - new Date(b.nextRenewalDate));
+
   const formatCurrency = (amount, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -147,6 +153,63 @@ const DashboardPage = () => {
                 Retry
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Urgent Renewal Alert — 5 days or less */}
+      {!loading && urgentRenewals.length > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/40 dark:to-orange-950/40 rounded-2xl shadow-lg border border-red-200 dark:border-red-800/60 p-5">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-red-800 dark:text-red-300">
+                {urgentRenewals.length === 1
+                  ? '1 subscription renewing soon!'
+                  : `${urgentRenewals.length} subscriptions renewing soon!`}
+              </h3>
+              <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-0.5">Within the next 5 days</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {urgentRenewals.map((sub) => {
+              const daysUntil = differenceInDays(new Date(sub.nextRenewalDate), new Date());
+              return (
+                <div key={sub._id} className="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={getLogoUrl(sub.companyName)}
+                      alt={sub.companyName}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                      className="w-8 h-8 rounded-lg flex-shrink-0 object-contain bg-white border border-gray-200 dark:border-gray-700"
+                    />
+                    <div className="w-8 h-8 bg-gradient-to-br from-red-400 to-orange-500 rounded-lg items-center justify-center flex-shrink-0 hidden">
+                      <span className="text-white text-xs font-bold">{sub.companyName.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">{sub.companyName}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(sub.price, sub.currency)}</div>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                    daysUntil === 0
+                      ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                      : daysUntil === 1
+                        ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300'
+                        : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                  }`}>
+                    {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `${daysUntil} days`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

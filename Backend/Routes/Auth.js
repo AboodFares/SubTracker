@@ -173,7 +173,8 @@ router.get('/google', (req, res) => {
       scope: [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/gmail.readonly' // Gmail read access for email filtering
+        'https://www.googleapis.com/auth/gmail.readonly', // Gmail read access for email filtering
+        'https://www.googleapis.com/auth/gmail.send'      // Gmail send access for renewal alerts
       ],
       prompt: 'consent' // Force consent screen to get refresh token
     });

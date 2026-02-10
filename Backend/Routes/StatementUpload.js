@@ -117,6 +117,44 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
       statement.status = 'completed';
       await statement.save();
 
+      // Step 6: Update existing subscriptions — mark seen/missed
+      const detectedNames = detectedSubscriptions.map(s => s.merchantName.toLowerCase());
+      const activeDocSubs = await Subscription.find({
+        userId,
+        status: 'active',
+        source: 'document'
+      });
+
+      for (const sub of activeDocSubs) {
+        const nameMatch = detectedNames.some(dn =>
+          dn.includes(sub.companyName.toLowerCase().split(/\s+/)[0]) ||
+          sub.companyName.toLowerCase().includes(dn.split(/\s+/)[0])
+        );
+        if (nameMatch) {
+          // Found in this statement — update lastSeen, clear missed flag, update nextRenewalDate
+          const matched = detectedSubscriptions.find(d =>
+            d.merchantName.toLowerCase().includes(sub.companyName.toLowerCase().split(/\s+/)[0]) ||
+            sub.companyName.toLowerCase().includes(d.merchantName.toLowerCase().split(/\s+/)[0])
+          );
+          const updateFields = { lastSeenInStatement: new Date(), missedInStatement: false };
+          if (matched && matched.transactionDates && matched.transactionDates.length > 0) {
+            const dates = matched.transactionDates.map(d => new Date(d)).sort((a, b) => a - b);
+            const latest = dates[dates.length - 1];
+            const next = new Date(latest);
+            switch (matched.frequency || sub.frequency || 'monthly') {
+              case 'weekly': next.setDate(next.getDate() + 7); break;
+              case 'yearly': next.setFullYear(next.getFullYear() + 1); break;
+              default: next.setMonth(next.getMonth() + 1); break;
+            }
+            updateFields.nextRenewalDate = next;
+          }
+          await Subscription.findByIdAndUpdate(sub._id, { $set: updateFields });
+        } else {
+          // Not found in this statement — flag as missed
+          await Subscription.findByIdAndUpdate(sub._id, { $set: { missedInStatement: true } });
+        }
+      }
+
       res.status(200).json({
         success: true,
         message: `Found ${detectedSubscriptions.length} potential subscriptions from ${numPages}-page statement`,
@@ -223,8 +261,11 @@ router.post('/:statementId/subscriptions/:index/add', authenticateUser, async (r
       companyName: detected.merchantName,
       price: detected.amount,
       currency: detected.currency || 'CAD',
+      frequency: detected.frequency || 'monthly',
       startDate,
       nextRenewalDate,
+      lastSeenInStatement: new Date(),
+      missedInStatement: false,
       status: 'active',
       confidence: 'user_confirmed',
       source: 'document'

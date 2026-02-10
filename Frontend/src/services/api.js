@@ -58,6 +58,7 @@ export const subscriptionsAPI = {
     const url = status ? `/subscriptions?status=${status}` : '/subscriptions';
     return api.get(url);
   },
+  cancel: (id) => api.post(`/subscriptions/${id}/cancel`),
 };
 
 // AI API (for testing)

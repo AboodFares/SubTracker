@@ -81,8 +81,8 @@ WHAT DOES NOT COUNT (return false):
 - Feature announcements, product updates, or onboarding emails
 - Price adjustment notifications that don't confirm an active payment
 - Marketing emails from banks, credit cards, or rewards programs
-- One-time purchases or order confirmations (Amazon, Walmart, eBay orders)
-- Order cancellations or shipping notifications
+- One-time purchases or order confirmations (Amazon orders, Walmart orders, eBay orders — NOT Amazon Prime or other subscriptions)
+- One-time ORDER cancellations or shipping notifications (NOT subscription cancellations — those DO count above)
 - Ride-hailing receipts (Uber, Lyft trips) or food delivery orders
 - Video game purchases or free trial codes
 - University/school course access or textbook access
@@ -94,7 +94,7 @@ WHAT DOES NOT COUNT (return false):
 - API credit top-ups or pay-as-you-go purchases
 - Credit notes, refunds, or invoices for one-time purchases (not recurring)
 
-ASK YOURSELF: Does this email confirm that money was charged or will be charged for a RECURRING subscription? If NO, return {"isSubscription": false}.
+ASK YOURSELF: Does this email confirm a RECURRING subscription event — a payment, renewal, signup, plan change, OR cancellation of a subscription? If NO, return {"isSubscription": false}.
 
 Return ONLY one of these two JSON objects:
 {"isSubscription": true}
@@ -105,7 +105,7 @@ Return ONLY one of these two JSON objects:
     messages: [
       {
         role: 'system',
-        content: 'You are a strict subscription detector. You ONLY flag emails that CONFIRM the user has paid for or is actively subscribed to a recurring service. Marketing emails, upsell promotions, failed payments, and feature announcements are NOT subscriptions — even if they mention prices. When in doubt, return {"isSubscription": false}. Always return valid JSON only.'
+        content: 'You are a strict subscription detector. You ONLY flag emails that CONFIRM a recurring subscription event: a payment, renewal, signup, plan change, or cancellation of a subscription. Marketing emails, upsell promotions, failed payments, and feature announcements are NOT subscriptions — even if they mention prices. A subscription CANCELLATION confirmation IS a valid subscription event. When in doubt, return {"isSubscription": false}. Always return valid JSON only.'
       },
       { role: 'user', content: prompt }
     ],

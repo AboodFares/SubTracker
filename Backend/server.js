@@ -12,6 +12,7 @@ validateEnv();
 const connectDB = require('./config/db');
 const { initializeEmailScheduler } = require('./services/emailScheduler');
 const { initializeBankScheduler } = require('./services/bankScheduler');
+const { initializeRenewalNotifier } = require('./services/renewalNotifier');
 
 const app = express();
 
@@ -23,6 +24,8 @@ const app = express();
     initializeEmailScheduler();
     // Initialize automated bank transaction sync
     initializeBankScheduler();
+    // Initialize renewal alert notifier
+    initializeRenewalNotifier();
   } catch (error) {
     console.error('Failed to initialize:', error);
   }

@@ -52,6 +52,11 @@ const subscriptionSchema = new mongoose.Schema({
     enum: ['email', 'transaction', 'transaction_email', 'document', 'manual'],
     default: 'email'
   },
+  frequency: {
+    type: String,
+    enum: ['monthly', 'yearly', 'weekly', 'unknown'],
+    default: 'monthly'
+  },
   planName: {
     type: String,
     trim: true
@@ -61,6 +66,18 @@ const subscriptionSchema = new mongoose.Schema({
     type: String
   },
   sourceEmailDate: {
+    type: Date
+  },
+  // Bank statement tracking
+  lastSeenInStatement: {
+    type: Date
+  },
+  missedInStatement: {
+    type: Boolean,
+    default: false
+  },
+  // Renewal alert tracking
+  renewalAlertSentAt: {
     type: Date
   }
 }, {

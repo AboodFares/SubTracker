@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { getLogoUrl } from '../utils/brandLogo';
+import { subscriptionsAPI } from '../services/api';
 
 const BrandLogo = ({ name, isActive, size = 'md' }) => {
   const [imgError, setImgError] = useState(false);
@@ -41,6 +42,21 @@ const formatDate = (dateString) => {
 };
 
 const SubscriptionList = ({ subscriptions, onRefresh }) => {
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const handleCancel = async (id) => {
+    if (!window.confirm('Cancel this subscription?')) return;
+    try {
+      setCancellingId(id);
+      await subscriptionsAPI.cancel(id);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error cancelling subscription:', err);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const formatCurrency = (amount, currency = 'USD') => {
     if (!amount && amount !== 0) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -134,6 +150,15 @@ const SubscriptionList = ({ subscriptions, onRefresh }) => {
                 </div>
               )}
 
+              {/* Not seen warning */}
+              {isActive && subscription.missedInStatement && (
+                <div className="flex-shrink-0 hidden sm:block">
+                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                    Not seen
+                  </span>
+                </div>
+              )}
+
               {/* Price */}
               <div className="text-right flex-shrink-0">
                 <div className="text-sm font-bold text-gray-900 dark:text-white">
@@ -145,6 +170,20 @@ const SubscriptionList = ({ subscriptions, onRefresh }) => {
                   </div>
                 )}
               </div>
+
+              {/* Cancel button */}
+              {isActive && (
+                <button
+                  onClick={() => handleCancel(subscription._id)}
+                  disabled={cancellingId === subscription._id}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                  title="Cancel subscription"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         );

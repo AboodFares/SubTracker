@@ -294,10 +294,49 @@ async function getUserSubscriptions(userId, options = {}) {
     }
 
     const subscriptions = await Subscription.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
 
-    return subscriptions;
+    // Auto-roll overdue renewal dates forward for active subscriptions
+    // Also backfill nextRenewalDate for subscriptions that never had one (e.g. email-sourced with no explicit billing date)
+    const now = new Date();
+    for (const sub of subscriptions) {
+      if (sub.status !== 'active') continue;
+
+      // If nextRenewalDate is missing, calculate from startDate + frequency
+      if (!sub.nextRenewalDate && sub.startDate) {
+        const renewal = new Date(sub.startDate);
+        let iterations = 0;
+        while (renewal < now && iterations < 120) {
+          switch (sub.frequency) {
+            case 'weekly': renewal.setDate(renewal.getDate() + 7); break;
+            case 'yearly': renewal.setFullYear(renewal.getFullYear() + 1); break;
+            default: renewal.setMonth(renewal.getMonth() + 1); break;
+          }
+          iterations++;
+        }
+        sub.nextRenewalDate = renewal;
+        await sub.save();
+        continue;
+      }
+
+      // Roll overdue dates forward
+      if (sub.nextRenewalDate && new Date(sub.nextRenewalDate) < now) {
+        const renewal = new Date(sub.nextRenewalDate);
+        let iterations = 0;
+        while (renewal < now && iterations < 24) {
+          switch (sub.frequency) {
+            case 'weekly': renewal.setDate(renewal.getDate() + 7); break;
+            case 'yearly': renewal.setFullYear(renewal.getFullYear() + 1); break;
+            default: renewal.setMonth(renewal.getMonth() + 1); break;
+          }
+          iterations++;
+        }
+        sub.nextRenewalDate = renewal;
+        await sub.save();
+      }
+    }
+
+    return subscriptions.map(s => s.toObject());
   } catch (error) {
     console.error('Error getting user subscriptions:', error);
     throw error;
