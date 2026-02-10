@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getLogoUrl } from '../utils/brandLogo';
@@ -53,23 +54,83 @@ const stats = [
   { value: '3', label: 'Detection Sources', sub: 'Email, Bank, Statements' },
   { value: 'AI', label: 'Powered by GPT-4', sub: 'Smart extraction' },
   { value: '5d', label: 'Early Alerts', sub: 'Before every renewal' },
-  { value: 'Free', label: 'To Get Started', sub: 'No credit card needed' }
+  { value: '24/7', label: 'Always Monitoring', sub: 'Automated scanning' }
 ];
+
+/* ── 3D Tilt Card ── */
+const TiltCard = ({ children, className }) => {
+  const cardRef = useRef(null);
+  const [transform, setTransform] = useState('');
+
+  const handleMouseMove = useCallback((e) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+    setTransform(`perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTransform('perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
+  }, []);
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={className}
+      style={{ transform, transition: 'transform 0.15s ease-out' }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  const [mousePos, setMousePos] = useState({ x: -200, y: -200 });
+  const pageRef = useRef(null);
+
+  /* ── Cursor spotlight tracker ── */
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    const handleMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top + el.scrollTop });
+    };
+    el.addEventListener('mousemove', handleMove);
+    return () => el.removeEventListener('mousemove', handleMove);
+  }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950 text-white">
+    <div ref={pageRef} className="min-h-screen flex flex-col bg-gray-950 text-white relative">
+      {/* Cursor spotlight */}
+      <div
+        className="pointer-events-none fixed z-30 w-[600px] h-[600px] rounded-full opacity-15 blur-3xl"
+        style={{
+          background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(139,92,246,0.2) 40%, transparent 70%)',
+          left: mousePos.x - 300,
+          top: mousePos.y - 300,
+          transition: 'left 0.1s ease-out, top 0.1s ease-out',
+        }}
+      />
+
       <Header />
       <main className="flex-1">
 
         {/* ===== HERO ===== */}
         <section className="relative overflow-hidden">
-          {/* Glow effects */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-indigo-500/15 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-40 left-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Breathing glow orbs */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-indigo-500/15 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none animate-orb-1" />
+          <div className="absolute top-40 left-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-orb-2" />
+          <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none animate-orb-3" />
 
           <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20 text-center">
             {/* Badge */}
@@ -95,9 +156,10 @@ const Home = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   to="/register"
-                  className="px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5"
+                  className="group relative px-8 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5"
                 >
-                  Get Started Free
+                  <span className="absolute inset-0 rounded-xl bg-indigo-400/20 animate-cta-pulse" />
+                  <span className="relative">Get Started Free</span>
                 </Link>
                 <Link
                   to="/login"
@@ -153,7 +215,7 @@ const Home = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {features.map((f, i) => (
-                <div key={i} className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 hover:bg-white/[0.06] hover:border-white/[0.1] transition-all duration-300">
+                <TiltCard key={i} className="group relative bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 hover:bg-white/[0.06] hover:border-white/[0.1] transition-colors duration-300">
                   {/* Subtle glow on hover */}
                   <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${f.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10`} />
 
@@ -162,7 +224,7 @@ const Home = () => {
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>
                   <p className="text-sm text-gray-400 leading-relaxed">{f.description}</p>
-                </div>
+                </TiltCard>
               ))}
             </div>
           </div>
@@ -241,7 +303,6 @@ const Home = () => {
                     Go to Dashboard
                   </Link>
                 )}
-                <p className="text-sm text-white/50 mt-4">No credit card required</p>
               </div>
             </div>
           </div>

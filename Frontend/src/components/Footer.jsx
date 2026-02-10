@@ -15,13 +15,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-white">Sub-Tracker</span>
+            <Link to="/" className="inline-block text-lg font-bold text-white mb-4 hover:opacity-80 transition-opacity">
+              Sub-Tracker
             </Link>
             <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
               Automatically track and manage all your subscriptions in one place. Connect your bank and Gmail for smarter subscription detection.
