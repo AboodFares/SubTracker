@@ -43,15 +43,20 @@ const formatDate = (dateString) => {
 
 const SubscriptionList = ({ subscriptions, onRefresh }) => {
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancelError, setCancelError] = useState('');
 
   const handleCancel = async (id) => {
     if (!window.confirm('Cancel this subscription?')) return;
     try {
       setCancellingId(id);
+      setCancelError('');
       await subscriptionsAPI.cancel(id);
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error cancelling subscription:', err);
+      const msg = err.response?.data?.message || 'Failed to cancel subscription. Please try again.';
+      setCancelError(msg);
+      setTimeout(() => setCancelError(''), 5000);
     } finally {
       setCancellingId(null);
     }
@@ -98,6 +103,11 @@ const SubscriptionList = ({ subscriptions, onRefresh }) => {
 
   return (
     <div className="space-y-3">
+      {cancelError && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-300">
+          {cancelError}
+        </div>
+      )}
       {subscriptions.map((subscription) => {
         const isActive = subscription.status === 'active';
         const renewal = isActive ? getDaysUntilRenewal(subscription.nextRenewalDate) : null;

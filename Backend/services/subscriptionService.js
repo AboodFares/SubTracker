@@ -93,17 +93,17 @@ async function updateSubscription(subscriptionId, updateData) {
  */
 async function cancelSubscription(subscriptionId, cancellationData) {
   try {
+    const setFields = {
+      status: 'cancelled',
+      cancellationDate: cancellationData.cancellationDate,
+      accessEndDate: cancellationData.accessEndDate,
+    };
+    if (cancellationData.sourceEmailId) setFields.sourceEmailId = cancellationData.sourceEmailId;
+    if (cancellationData.sourceEmailDate) setFields.sourceEmailDate = cancellationData.sourceEmailDate;
+
     const subscription = await Subscription.findByIdAndUpdate(
       subscriptionId,
-      {
-        $set: {
-          status: 'cancelled',
-          cancellationDate: cancellationData.cancellationDate,
-          accessEndDate: cancellationData.accessEndDate,
-          sourceEmailId: cancellationData.sourceEmailId,
-          sourceEmailDate: cancellationData.sourceEmailDate
-        }
-      },
+      { $set: setFields },
       { new: true, runValidators: true }
     );
     return subscription;
