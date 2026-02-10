@@ -29,7 +29,7 @@ const Login = () => {
         if (!bankResponse.data.success || !bankResponse.data.connected) {
           setShowOnboarding(true);
         } else {
-          navigate('/dashboard');
+          navigate('/app/dashboard');
         }
       } catch (error) {
         // If error checking bank status, show onboarding anyway
@@ -38,13 +38,13 @@ const Login = () => {
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    navigate('/dashboard');
+    navigate('/app/dashboard');
   };
 
   const handleGoogleLogin = () => {

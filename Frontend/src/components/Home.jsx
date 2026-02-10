@@ -50,7 +50,7 @@ const Home = () => {
               </div>
             ) : (
               <Link
-                to="/dashboard"
+                to="/app/dashboard"
                 className="inline-block px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Go to Dashboard

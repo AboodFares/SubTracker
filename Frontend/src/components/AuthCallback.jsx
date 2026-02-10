@@ -63,7 +63,7 @@ const AuthCallback = () => {
         setHasBankConnection(true);
         // User has bank connection, go directly to dashboard
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/app/dashboard');
         }, 100);
       } else {
         // No bank connection, show onboarding
@@ -80,7 +80,7 @@ const AuthCallback = () => {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    navigate('/dashboard');
+    navigate('/app/dashboard');
   };
 
   if (loading && !showOnboarding) {
