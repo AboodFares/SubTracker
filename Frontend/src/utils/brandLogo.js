@@ -36,10 +36,22 @@ const DOMAIN_OVERRIDES = {
   'adobe creative cloud': 'adobe.com',
   'creative cloud': 'adobe.com',
   'doordash': 'doordash.com',
+  'doordash dashpass': 'doordash.com',
   'dashpass': 'doordash.com',
   'uber eats': 'ubereats.com',
   'uber one': 'uber.com',
+  'uber pass': 'uber.com',
   'uber': 'uber.com',
+  'hellofresh': 'hellofresh.com',
+  'hello fresh': 'hellofresh.com',
+  'spotify': 'spotify.com',
+  'netflix': 'netflix.com',
+  'adobe': 'adobe.com',
+  'notion': 'notion.so',
+  'slack': 'slack.com',
+  'dropbox': 'dropbox.com',
+  'github': 'github.com',
+  'figma': 'figma.com',
 };
 
 /**
@@ -47,8 +59,13 @@ const DOMAIN_OVERRIDES = {
  */
 function getDomain(companyName) {
   const key = companyName.trim().toLowerCase();
+  // Exact match
   const override = DOMAIN_OVERRIDES[key];
   if (override) return override;
+  // Partial match: check if the input contains a known brand name
+  for (const [brand, domain] of Object.entries(DOMAIN_OVERRIDES)) {
+    if (key.includes(brand) || brand.includes(key)) return domain;
+  }
   return key.replace(/[^a-z0-9]/g, '') + '.com';
 }
 

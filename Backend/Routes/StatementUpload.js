@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const BankStatement = require('../models/BankStatement');
-const { extractTextFromPDF, parseTransactions } = require('../services/pdfService');
+const { extractTextFromPDF } = require('../services/pdfService');
 const { analyzeStatementTransactions } = require('../services/aiService');
 const { findExistingSubscription } = require('../services/subscriptionService');
 
@@ -71,28 +71,39 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
         return res.status(400).json({ success: false, message: statement.errorMessage });
       }
 
-      // Step 2: Parse transactions from text
-      let transactions = parseTransactions(text);
+      // Step 2: Send raw text directly to GPT-4.1 (no regex parsing needed)
+      // GPT-4.1 with 1M token context can read any bank statement format natively
+      const rawText = text.substring(0, 30000); // ~10K tokens, plenty for any statement
+      console.log(`[StatementUpload] Sending ${rawText.length} chars of raw text to GPT-4.1 (${numPages} pages)`);
 
-      // Fallback: if parsing found too few transactions, send raw text to AI
-      let useRawText = false;
-      if (transactions.length < 5 && numPages > 1) {
-        useRawText = true;
+      // Step 3: Fetch previously detected subscriptions from earlier uploads
+      // Only use the MOST RECENT completed statement's results (it already has accumulated context)
+      const mostRecentStatement = await BankStatement.findOne({
+        userId,
+        status: 'completed',
+        _id: { $ne: statement._id }
+      }).sort({ uploadDate: -1 }).select('extractedSubscriptions').lean();
+
+      const previousSubscriptions = [];
+      if (mostRecentStatement) {
+        for (const sub of (mostRecentStatement.extractedSubscriptions || [])) {
+          previousSubscriptions.push({
+            merchantName: sub.merchantName,
+            amount: sub.amount,
+            currency: sub.currency,
+            frequency: sub.frequency,
+            transactionDates: (sub.transactionDates || []).map(d =>
+              d instanceof Date ? d.toISOString().split('T')[0] : String(d).split('T')[0]
+            )
+          });
+        }
       }
 
-      // Step 3: Send to AI for subscription detection
-      let aiInput;
-      if (useRawText) {
-        // Send raw text as a single "transaction" for AI to parse
-        aiInput = [{ date: null, description: text.substring(0, 15000), amount: 0 }];
-      } else {
-        aiInput = transactions;
-      }
+      // Step 4: Send raw text to AI for subscription detection with cross-PDF context
+      const detectedSubscriptions = await analyzeStatementTransactions(rawText, previousSubscriptions);
 
-      const detectedSubscriptions = await analyzeStatementTransactions(aiInput);
-
-      // Step 4: Save results
-      statement.totalTransactions = transactions.length;
+      // Step 5: Save results
+      statement.totalTransactions = detectedSubscriptions.length;
       statement.extractedSubscriptions = detectedSubscriptions.map(sub => ({
         merchantName: sub.merchantName,
         amount: sub.amount,
@@ -108,7 +119,7 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
 
       res.status(200).json({
         success: true,
-        message: `Found ${detectedSubscriptions.length} potential subscriptions from ${transactions.length} transactions`,
+        message: `Found ${detectedSubscriptions.length} potential subscriptions from ${numPages}-page statement`,
         statement
       });
 
@@ -194,13 +205,26 @@ router.post('/:statementId/subscriptions/:index/add', authenticateUser, async (r
       });
     }
 
+    // Calculate next renewal from latest transaction date + frequency
+    const dates = (detected.transactionDates || []).map(d => new Date(d)).sort((a, b) => a - b);
+    const startDate = dates.length > 0 ? dates[0] : new Date();
+    const latestDate = dates.length > 0 ? dates[dates.length - 1] : new Date();
+    const nextRenewalDate = new Date(latestDate);
+    switch (detected.frequency) {
+      case 'weekly': nextRenewalDate.setDate(nextRenewalDate.getDate() + 7); break;
+      case 'yearly': nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1); break;
+      case 'monthly':
+      default: nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1); break;
+    }
+
     // Create new subscription
     const subscription = await Subscription.create({
       userId,
       companyName: detected.merchantName,
       price: detected.amount,
       currency: detected.currency || 'CAD',
-      startDate: detected.transactionDates?.[0] || new Date(),
+      startDate,
+      nextRenewalDate,
       status: 'active',
       confidence: 'user_confirmed',
       source: 'document'

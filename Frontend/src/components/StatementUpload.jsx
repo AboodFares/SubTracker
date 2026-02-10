@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { statementsAPI } from '../services/api';
-import { format } from 'date-fns';
+import { format, addMonths, addWeeks, addYears } from 'date-fns';
 
 const StatementUpload = () => {
   const [uploading, setUploading] = useState(false);
@@ -122,6 +122,24 @@ const StatementUpload = () => {
     }
   };
 
+  const getStartDate = (sub) => {
+    if (!sub.transactionDates || sub.transactionDates.length === 0) return null;
+    const sorted = [...sub.transactionDates].map(d => new Date(d)).sort((a, b) => a - b);
+    return sorted[0];
+  };
+
+  const getNextRenewal = (sub) => {
+    if (!sub.transactionDates || sub.transactionDates.length === 0) return null;
+    const sorted = [...sub.transactionDates].map(d => new Date(d)).sort((a, b) => a - b);
+    const latest = sorted[sorted.length - 1];
+    switch (sub.frequency) {
+      case 'weekly': return addWeeks(latest, 1);
+      case 'yearly': return addYears(latest, 1);
+      case 'monthly':
+      default: return addMonths(latest, 1);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Upload Zone */}
@@ -233,6 +251,8 @@ const StatementUpload = () => {
                       <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Amount</th>
                       <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Frequency</th>
                       <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Occurrences</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Start Date</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Next Renewal</th>
                       <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Confidence</th>
                       <th className="text-right py-2 px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Action</th>
                     </tr>
@@ -251,6 +271,12 @@ const StatementUpload = () => {
                         </td>
                         <td className="py-3 px-3 text-gray-500 dark:text-gray-400">
                           {sub.occurrences}x
+                        </td>
+                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">
+                          {getStartDate(sub) ? formatDate(getStartDate(sub)) : '—'}
+                        </td>
+                        <td className="py-3 px-3 text-gray-500 dark:text-gray-400">
+                          {getNextRenewal(sub) ? formatDate(getNextRenewal(sub)) : '—'}
                         </td>
                         <td className="py-3 px-3">
                           {getConfidenceBadge(sub.confidence)}

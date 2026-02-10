@@ -225,38 +225,77 @@ async function extractFromSingleEmail(emailText) {
 }
 
 /**
- * Analyzes bank statement transactions in a single batch to identify recurring subscriptions
- * @param {Array<{date: string, description: string, amount: number}>} transactions
+ * Analyzes bank statement raw text to identify recurring subscriptions.
+ * Sends raw PDF text directly to GPT-4.1 which can understand any bank format.
+ * Uses cross-PDF context from previously detected subscriptions.
+ * @param {string} rawText - Raw text extracted from the PDF
+ * @param {Array<{merchantName: string, amount: number, transactionDates: string[]}>} previousSubscriptions - Subscriptions detected from earlier PDFs
  * @returns {Promise<Array>} Array of detected subscriptions
  */
-async function analyzeStatementTransactions(transactions) {
+async function analyzeStatementTransactions(rawText, previousSubscriptions = []) {
   try {
-    const transactionsText = JSON.stringify(transactions);
+    let previousContext = '';
+    if (previousSubscriptions.length > 0) {
+      const summary = previousSubscriptions.map(sub =>
+        `- ${sub.merchantName}: $${sub.amount} ${sub.currency || 'CAD'}, seen on [${(sub.transactionDates || []).join(', ')}], frequency: ${sub.frequency || 'unknown'}`
+      ).join('\n');
+      previousContext = `
 
-    const prompt = `You are analyzing bank statement transactions to find RECURRING SUBSCRIPTIONS.
+IMPORTANT — PREVIOUSLY DETECTED SUBSCRIPTIONS FROM EARLIER BANK STATEMENTS:
+${summary}
 
-Here are all the transactions from a bank statement:
-${transactionsText}
+Use this context to:
+1. CONFIRM subscriptions that appear again in the new transactions (boost their confidence to "high")
+2. Flag if a previously detected subscription is MISSING from this month (it may have been cancelled)
+3. Even if a merchant name is slightly different (e.g., "NFLX" vs "NETFLIX"), match them if the amount is the same`;
+    }
+
+    const prompt = `You are analyzing a bank statement to find RECURRING SUBSCRIPTIONS.
+
+The following is RAW TEXT extracted from a bank statement PDF. Read through it carefully, identify all transactions, and find subscription charges.
+
+RAW BANK STATEMENT TEXT:
+${rawText}
+${previousContext}
 
 Your task:
-1. Look at ALL transactions
-2. Find recurring subscriptions by identifying the SAME merchant charging the SAME (or very similar) amount multiple times
-3. Also identify single charges that are clearly from known subscription services (Netflix, Spotify, iCloud, etc.)
+1. Read the entire statement and identify individual transactions (look for dates, merchant names, and amounts)
+2. DEDUPLICATION: Bank statements often list the same transaction in multiple sections (summary, details, pending, posted). A transaction with the SAME merchant, SAME amount, and SAME date appearing in different sections is ONE transaction, not two. Only count unique date+merchant+amount combinations.
+3. Find recurring subscriptions: the SAME merchant charging the SAME (or very similar) amount on DIFFERENT dates
+4. Cross-reference with previously detected subscriptions (if any) — if the same merchant+amount appears again, that strongly confirms it's a subscription
+5. Also identify single charges clearly from known subscription services (Netflix, Spotify, iCloud, etc.)
+
+CRITICAL RULES FOR merchantName:
+- Extract the merchant name from the transaction lines in the statement
+- Clean it up to the SHORT consumer-facing brand name (e.g., "APPLE.COM/BILL" → "Apple", "NETFLIX.COM" → "Netflix", "SPOTIFY AB" → "Spotify", "GOOGLE *YouTube Premium" → "YouTube Premium", "AMZN*Prime" → "Amazon Prime")
+- Do NOT prefix with parent company names. Wrong: "Google YouTube Premium". Correct: "YouTube Premium"
+- NEVER return "Unknown" as a merchantName — if you cannot identify the merchant, SKIP that transaction entirely
+- Do NOT group unrelated transactions together just because they have the same amount
+
+WHAT IS a subscription (include these):
+- Digital streaming services (Netflix, Spotify, Disney+, YouTube Premium, Crave, etc.)
+- Software/SaaS (Adobe, Microsoft 365, ChatGPT, iCloud, Google One, etc.)
+- Membership services (Amazon Prime, Costco, gym memberships)
+- App subscriptions (mobile apps with recurring billing)
+
+WHAT IS NOT a subscription (exclude these):
+- Coffee shops, fast food, restaurants (Tim Hortons, Starbucks, McDonald's) — even if they repeat
+- Grocery stores, convenience stores (7-Eleven, Walmart, No Frills)
+- Gas stations, parking, transit
+- ATM withdrawals, bank fees, e-transfers
+- One-time purchases (Amazon orders, online shopping)
+- Utility bills (electricity, water, phone, internet)
+- Rent, mortgage, insurance payments
+- Any charge under $1.00
 
 For each detected subscription, return:
-- merchantName: Clean, short brand name (e.g., "Netflix", "Spotify", "Apple", not "APPLE.COM/BILL" or "NETFLIX.COM")
-- amount: The recurring charge amount
+- merchantName: Clean, short brand name (NEVER "Unknown")
+- amount: The charge amount
 - currency: Currency code (default "CAD")
 - frequency: "monthly", "yearly", "weekly", or "unknown"
-- occurrences: How many times this charge appears in the statement
-- transactionDates: Array of dates when charges occurred (use the dates from the transactions)
-- confidence: "high" if 3+ occurrences with same amount, "medium" if 2 occurrences, "low" if 1 occurrence but clearly a known subscription
-
-DO NOT include:
-- One-time purchases (Amazon orders, grocery stores, gas stations, restaurants)
-- ATM withdrawals or transfers
-- Utility bills (electricity, water, internet) unless clearly a streaming/digital service
-- Rent or mortgage payments
+- occurrences: Total times this charge has been seen (including previous statements)
+- transactionDates: ALL dates when charges occurred (extract from statement text, combine with previous statement dates)
+- confidence: "high" if seen across multiple statements OR 3+ times, "medium" if 2 occurrences, "low" if 1 occurrence but clearly a known subscription
 
 Return ONLY a JSON array of detected subscriptions. If none found, return an empty array [].
 Example: [{"merchantName": "Netflix", "amount": 16.49, "currency": "CAD", "frequency": "monthly", "occurrences": 3, "transactionDates": ["2026-01-15", "2025-12-15", "2025-11-15"], "confidence": "high"}]
@@ -264,33 +303,23 @@ Example: [{"merchantName": "Netflix", "amount": 16.49, "currency": "CAD", "frequ
 Return ONLY the JSON array, no additional text.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1',
       messages: [
         {
           role: 'system',
-          content: 'You are a financial analyst that identifies recurring subscription charges from bank statements. Return valid JSON arrays only, no markdown or explanation.'
+          content: 'You are a financial analyst that identifies recurring subscription charges from bank statements. You cross-reference new transactions against previously detected subscriptions to improve accuracy. Return valid JSON arrays only, no markdown or explanation.'
         },
         { role: 'user', content: prompt }
       ],
       temperature: 0.2
     });
 
-    let responseContent = completion.choices[0].message.content.trim();
-    responseContent = responseContent.replace(/^```json\n?/i, '').replace(/\n?```$/i, '');
-    responseContent = responseContent.replace(/^```\n?/i, '').replace(/\n?```$/i, '');
-
+    const responseContent = cleanJsonResponse(completion.choices[0].message.content);
     const results = JSON.parse(responseContent);
     return Array.isArray(results) ? results : [];
   } catch (error) {
     console.error('Error in analyzeStatementTransactions:', error);
-
-    if (error.status === 429) {
-      throw new Error('OpenAI API quota exceeded. Please check your OpenAI account billing.');
-    } else if (error.status === 401) {
-      throw new Error('OpenAI API key is invalid or expired.');
-    }
-
-    throw error;
+    handleOpenAIError(error);
   }
 }
 
