@@ -142,14 +142,52 @@ const StatementUpload = () => {
 
   return (
     <div className="space-y-6">
+      {/* Page header */}
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bank Statements</h1>
+
+      {/* How it works */}
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-800/60 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">How it works</h3>
+        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+            <p>Upload your <strong className="text-gray-900 dark:text-white">last 3 bank statements</strong> as PDFs, starting from the oldest to the newest.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+            <p>Our AI scans your transactions and identifies recurring charges that look like subscriptions.</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+            <p>Review the results, then click <strong className="text-gray-900 dark:text-white">Add</strong> to track any subscription. Going forward, just upload each new statement as you receive it.</p>
+          </div>
+        </div>
+
+        {/* Confidence levels */}
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Confidence Levels</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 font-semibold rounded-full border bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800">high</span>
+              <span className="text-gray-500 dark:text-gray-400">Recurring pattern confirmed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 font-semibold rounded-full border bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800">medium</span>
+              <span className="text-gray-500 dark:text-gray-400">Likely a subscription</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 font-semibold rounded-full border bg-gray-100 dark:bg-gray-700/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-600">low</span>
+              <span className="text-gray-500 dark:text-gray-400">Might not be recurring</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Upload Zone */}
       <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-800/60 p-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-          Upload Bank Statement
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+          Upload Statement
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Upload a PDF bank statement to automatically detect recurring subscriptions from your transactions.
-        </p>
 
         <div
           onDrop={handleDrop}

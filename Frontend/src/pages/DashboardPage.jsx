@@ -16,7 +16,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const init = async () => {
-      // Fetch current subs first
+      // Fetch current subs first — show dashboard immediately
       try {
         const response = await subscriptionsAPI.getAll();
         const currentSubs = response.data.subscriptions || [];
@@ -24,9 +24,11 @@ const DashboardPage = () => {
         setSubscriptions(currentSubs);
       } catch (err) {
         console.error('Error fetching subscriptions:', err);
+      } finally {
+        setLoading(false);
       }
 
-      // Process emails silently
+      // Process emails silently in background
       try {
         const response = await subscriptionsAPI.processEmails(50);
         const stats = response.data.stats;
@@ -62,8 +64,6 @@ const DashboardPage = () => {
       } catch (err) {
         console.error('Error processing emails:', err);
         setError(err.response?.data?.message || '');
-      } finally {
-        setLoading(false);
       }
     };
     init();
@@ -121,10 +121,7 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Overview of your subscriptions</p>
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
 
       {error && (
         <div className="text-sm text-red-500 dark:text-red-400">{error}</div>
