@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { subscriptionsAPI } from '../services/api';
 import SubscriptionList from '../components/SubscriptionList';
 
@@ -7,10 +7,62 @@ const SubscriptionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
+  const [recentChanges, setRecentChanges] = useState({});
+  const prevSubsRef = useRef(null);
+  const emailsProcessed = useRef(false);
 
   useEffect(() => {
     fetchSubscriptions();
   }, [filter]);
+
+  // Process emails once on mount
+  useEffect(() => {
+    if (emailsProcessed.current) return;
+    emailsProcessed.current = true;
+
+    const processEmails = async () => {
+      try {
+        // Snapshot current subs before processing
+        const preResponse = await subscriptionsAPI.getAll();
+        const preSubs = preResponse.data.subscriptions || [];
+        prevSubsRef.current = preSubs.map(s => ({ id: s._id, status: s.status, updatedAt: s.updatedAt }));
+
+        const response = await subscriptionsAPI.processEmails(50);
+        const stats = response.data.stats;
+        const hasChanges = stats && (stats.created > 0 || stats.updated > 0 || stats.cancelled > 0);
+
+        if (hasChanges) {
+          const status = filter === 'all' ? null : filter;
+          const newResponse = await subscriptionsAPI.getAll(status);
+          const newSubs = newResponse.data.subscriptions || [];
+          const prev = prevSubsRef.current || [];
+          const prevIds = new Set(prev.map(s => s.id));
+          const changes = {};
+
+          for (const sub of newSubs) {
+            if (!prevIds.has(sub._id)) {
+              changes[sub._id] = 'new';
+            } else {
+              const old = prev.find(p => p.id === sub._id);
+              if (old && old.status !== 'cancelled' && sub.status === 'cancelled') {
+                changes[sub._id] = 'cancelled';
+              } else if (old && old.updatedAt !== sub.updatedAt) {
+                changes[sub._id] = 'updated';
+              }
+            }
+          }
+
+          setRecentChanges(changes);
+          setSubscriptions(newSubs);
+          setTimeout(() => setRecentChanges({}), 30000);
+        }
+      } catch (err) {
+        console.error('Error processing emails:', err);
+      }
+    };
+
+    processEmails();
+  }, []);
 
   const fetchSubscriptions = async () => {
     try {
@@ -73,7 +125,7 @@ const SubscriptionsPage = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600"></div>
         </div>
       ) : (
-        <SubscriptionList subscriptions={subscriptions} onRefresh={fetchSubscriptions} />
+        <SubscriptionList subscriptions={subscriptions} onRefresh={fetchSubscriptions} recentChanges={recentChanges} />
       )}
     </div>
   );

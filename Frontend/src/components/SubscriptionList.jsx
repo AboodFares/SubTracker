@@ -41,7 +41,7 @@ const formatDate = (dateString) => {
   }
 };
 
-const SubscriptionList = ({ subscriptions, onRefresh }) => {
+const SubscriptionList = ({ subscriptions, onRefresh, recentChanges = {} }) => {
   const [cancellingId, setCancellingId] = useState(null);
   const [cancelError, setCancelError] = useState('');
 
@@ -131,7 +131,22 @@ const SubscriptionList = ({ subscriptions, onRefresh }) => {
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {subscription.companyName}
                   </h3>
-                  {!isActive && (
+                  {recentChanges[subscription._id] === 'new' && (
+                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                      New
+                    </span>
+                  )}
+                  {recentChanges[subscription._id] === 'updated' && (
+                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex-shrink-0">
+                      Updated
+                    </span>
+                  )}
+                  {recentChanges[subscription._id] === 'cancelled' && (
+                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex-shrink-0">
+                      Cancelled
+                    </span>
+                  )}
+                  {!isActive && !recentChanges[subscription._id] && (
                     <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 flex-shrink-0">
                       Cancelled
                     </span>

@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import { bankAPI } from '../services/api';
-import Onboarding from './Onboarding';
 
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [hasBankConnection, setHasBankConnection] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -23,7 +17,7 @@ const AuthCallback = () => {
       localStorage.setItem('token', token);
 
       // Fetch user info to store in context
-      fetchUserInfo(token);
+      fetchUserInfo();
     } else {
       setError('Authentication failed');
       setLoading(false);
@@ -31,20 +25,14 @@ const AuthCallback = () => {
     }
   }, [searchParams, navigate]);
 
-  const fetchUserInfo = async (token) => {
+  const fetchUserInfo = async () => {
     try {
-      // Fetch user info from /api/auth/me endpoint
       const response = await api.get('/auth/me');
-      
+
       if (response.data.success && response.data.user) {
-        // Store user info
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Trigger a custom event to notify AuthContext
         window.dispatchEvent(new Event('userUpdated'));
-        
-        // Check if user has bank connection
-        checkBankConnection();
+        navigate('/app/dashboard');
       } else {
         throw new Error('Invalid response');
       }
@@ -56,34 +44,7 @@ const AuthCallback = () => {
     }
   };
 
-  const checkBankConnection = async () => {
-    try {
-      const response = await bankAPI.getStatus();
-      if (response.data.success && response.data.connected) {
-        setHasBankConnection(true);
-        // User has bank connection, go directly to dashboard
-        setTimeout(() => {
-          navigate('/app/dashboard');
-        }, 100);
-      } else {
-        // No bank connection, show onboarding
-        setShowOnboarding(true);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error checking bank connection:', error);
-      // If error, still show onboarding (user can skip)
-      setShowOnboarding(true);
-      setLoading(false);
-    }
-  };
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    navigate('/app/dashboard');
-  };
-
-  if (loading && !showOnboarding) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
@@ -109,10 +70,6 @@ const AuthCallback = () => {
         </div>
       </div>
     );
-  }
-
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return null;

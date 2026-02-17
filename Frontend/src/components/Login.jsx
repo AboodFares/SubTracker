@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { authAPI, bankAPI } from '../services/api';
-import Onboarding from './Onboarding';
+import { authAPI } from '../services/api';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -11,7 +10,6 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -21,20 +19,9 @@ const Login = () => {
     setLoading(true);
 
     const result = await login(email, password);
-    
+
     if (result.success) {
-      // Check if user has bank connection, if not show onboarding
-      try {
-        const bankResponse = await bankAPI.getStatus();
-        if (!bankResponse.data.success || !bankResponse.data.connected) {
-          setShowOnboarding(true);
-        } else {
-          navigate('/app/dashboard');
-        }
-      } catch (error) {
-        // If error checking bank status, show onboarding anyway
-        setShowOnboarding(true);
-      }
+      navigate('/app/dashboard');
     } else {
       setError(result.message);
     }
@@ -42,18 +29,9 @@ const Login = () => {
     setLoading(false);
   };
 
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-    navigate('/app/dashboard');
-  };
-
   const handleGoogleLogin = () => {
     authAPI.googleLogin();
   };
-
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 transition-colors">

@@ -128,11 +128,25 @@ Return ONLY one of these two JSON objects:
  * @returns {Promise<Object>} Extracted subscription details
  */
 async function extractSubscriptionDetails(emailText) {
-  const prompt = `This email has been confirmed as a subscription-related email. Extract the precise details.
+  const prompt = `FIRST, verify whether this email is a REAL subscription confirmation. Then, if verified, extract the details.
 
 Email content:
 ${emailText}
 
+STEP 1 — VERIFICATION:
+Before extracting any data, determine if this email is a GENUINE transactional subscription email (payment receipt, renewal confirmation, cancellation confirmation, plan change confirmation).
+
+If the email is ANY of the following, return ONLY {"isSubscription": false}:
+- A marketing, promotional, or upsell email (e.g., "Try Premium!", "Get 50% off!", "Upgrade now!")
+- An advertisement disguised as a receipt
+- A feature announcement or product update
+- A "you're missing out" or engagement reminder
+- A free trial invitation or promotion
+- A one-time purchase, order, or delivery notification
+- A ride-hailing receipt, food delivery order, or one-time service
+- An email that mentions a price as part of an AD, not a confirmed charge
+
+STEP 2 — EXTRACTION (only if the email is a real subscription):
 Extract and return a JSON object with these fields:
 {
   "serviceName": "short brand name only (e.g., 'Netflix', 'Spotify', 'Apple', 'Anthropic')",
@@ -175,7 +189,7 @@ Return ONLY the JSON object, no additional text.`;
     messages: [
       {
         role: 'system',
-        content: 'You are a precise data extractor for subscription emails. Extract exact values from the email — never guess or hallucinate. If a field is not explicitly stated in the email, return null. Always return valid JSON only, no markdown or explanation.'
+        content: 'You are a precise subscription verifier and data extractor. FIRST verify the email is a genuine subscription event (payment, renewal, cancellation, plan change) — not a marketing/promotional email. If it is NOT a real subscription, return {"isSubscription": false}. If it IS real, extract exact values — never guess or hallucinate. If a field is not explicitly stated, return null. Always return valid JSON only, no markdown or explanation.'
       },
       { role: 'user', content: prompt }
     ],
@@ -206,9 +220,15 @@ async function extractFromSingleEmail(emailText) {
       return null;
     }
 
-    // Stage 2: Extraction (GPT-4o — precise, only runs on confirmed subscriptions)
-    console.log('[aiService] Stage 1 confirmed subscription — sending to GPT-4o for extraction');
+    // Stage 2: Verification + Extraction (GPT-4o — precise, only runs on Stage 1 positives)
+    console.log('[aiService] Stage 1 confirmed subscription — sending to GPT-4o for verification + extraction');
     const extractedData = await extractSubscriptionDetails(emailText);
+
+    // Check if GPT-4o rejected the email (Stage 2 verification)
+    if (extractedData.isSubscription === false) {
+      console.log('[aiService] Stage 2 (GPT-4o) rejected email as not a real subscription — false positive caught');
+      return null;
+    }
 
     // Validate event type
     if (!extractedData.eventType || !isValidEventType(extractedData.eventType)) {
