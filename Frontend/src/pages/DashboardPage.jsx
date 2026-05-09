@@ -13,6 +13,7 @@ const DashboardPage = () => {
   const [error, setError] = useState('');
   const [recentChanges, setRecentChanges] = useState({});
   const prevSubsRef = useRef(null);
+  const loadStartRef = useRef(Date.now());
 
   useEffect(() => {
     const init = async () => {
@@ -25,7 +26,10 @@ const DashboardPage = () => {
       } catch (err) {
         console.error('Error fetching subscriptions:', err);
       } finally {
-        setLoading(false);
+        // Show loader for at least 1.8s so the animation is always visible
+        const elapsed = Date.now() - loadStartRef.current;
+        const delay = Math.max(0, 1800 - elapsed);
+        setTimeout(() => setLoading(false), delay);
       }
 
       // Process emails silently in background
@@ -128,14 +132,13 @@ const DashboardPage = () => {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-            <svg className="animate-spin h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Syncing subscriptions...
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-950">
+          <div className="loader">
+            <span></span>
           </div>
+          <p className="mt-8 text-sm text-gray-400 tracking-widest uppercase">
+            Fetching your subscriptions…
+          </p>
         </div>
       ) : (
         <>
@@ -161,7 +164,7 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Chart + Table row */}
+          {/* Chart + Subscriptions Table */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Spending Chart */}
             {chartData.length > 0 && (
@@ -170,15 +173,7 @@ const DashboardPage = () => {
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={75}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
+                      <Pie data={chartData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value">
                         {chartData.map((_, i) => (
                           <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                         ))}

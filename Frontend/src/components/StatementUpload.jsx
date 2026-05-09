@@ -184,45 +184,27 @@ const StatementUpload = () => {
       </div>
 
       {/* Upload Zone */}
-      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/60 dark:border-gray-800/60 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-          Upload Statement
-        </h3>
-
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => !uploading && fileInputRef.current?.click()}
-          className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
-            dragOver
-              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-              : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-          } ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {uploading ? (
-            <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Processing your bank statement...
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Extracting transactions and analyzing with AI (this may take a minute)
-              </p>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className="flex flex-col items-center gap-4 mt-28"
+      >
+        <div className="folder-container">
+          <div className="folder">
+            <div className="front-side">
+              <div className="tip"></div>
+              <div className="cover"></div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <svg className="w-10 h-10 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Drop your PDF bank statement here
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                or click to browse (PDF only, max 10MB)
-              </p>
+            <div className="back-side">
             </div>
-          )}
+          </div>
+          <label
+            className={`folder-file-upload ${uploading ? 'opacity-60 pointer-events-none' : ''}`}
+            onClick={(e) => { e.preventDefault(); if (!uploading) fileInputRef.current?.click(); }}
+          >
+            {uploading ? 'Processing…' : 'Upload PDF Statement'}
+          </label>
           <input
             ref={fileInputRef}
             type="file"
@@ -233,13 +215,20 @@ const StatementUpload = () => {
           />
         </div>
 
+        {uploading && (
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Analyzing with AI… this may take a minute</p>
+          </div>
+        )}
+
         {error && (
-          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="w-full max-w-sm p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
           </div>
         )}
         {successMsg && (
-          <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="w-full max-w-sm p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-sm text-green-700 dark:text-green-300">{successMsg}</p>
           </div>
         )}
