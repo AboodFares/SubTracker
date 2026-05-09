@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       animation: {
-        'marquee': 'marquee 25s linear infinite',
+        'marquee': 'marquee 35s linear infinite',
         'orb-1': 'orb1 8s ease-in-out infinite',
         'orb-2': 'orb2 10s ease-in-out infinite',
         'orb-3': 'orb3 12s ease-in-out infinite',
@@ -17,7 +17,7 @@ export default {
       keyframes: {
         marquee: {
           '0%': { transform: 'translateX(0%)' },
-          '100%': { transform: 'translateX(-50%)' },
+          '100%': { transform: 'translateX(-33.3333%)' },
         },
         orb1: {
           '0%, 100%': { transform: 'translate(-50%, 0) scale(1)', opacity: '0.15' },

@@ -49,3 +49,35 @@ html {
   animation: fadeIn 0.3s ease-out;
 }
 
+@keyframes float-a {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes float-b {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Glassmorphism feature card */
+.glass-card {
+  background: rgba(217, 217, 217, 0.58);
+  border: 1px solid white;
+  box-shadow: 12px 17px 51px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 17px;
+  cursor: pointer;
+  transition: all 0.5s;
+  user-select: none;
+}
+
+.glass-card:hover {
+  border: 1px solid black;
+  transform: scale(1.05);
+}
+
+.glass-card:active {
+  transform: scale(0.95) rotateZ(1.7deg);
+}
+
