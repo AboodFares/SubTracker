@@ -41,13 +41,6 @@ const features = [
   },
 ];
 
-const steps = [
-  { num: '1', title: 'Create Account', desc: 'Sign up in seconds with Google OAuth' },
-  { num: '2', title: 'Connect Sources', desc: 'Link Gmail, upload statements, or connect your bank' },
-  { num: '3', title: 'AI Detects', desc: 'Our AI scans and identifies all recurring charges' },
-  { num: '4', title: 'Stay in Control', desc: 'Track, manage, and get alerts for every subscription' },
-];
-
 const previewCards = [
   { name: 'Netflix',  amount: '$15.99', cycle: 'monthly', next: 'Jun 3',  dot: 'bg-red-400',    rotate: 'rotate(6deg)',  top: '8%',  left: '0%',  anim: 'float-a 6s ease-in-out infinite' },
   { name: 'Spotify',  amount: '$9.99',  cycle: 'monthly', next: 'Jun 12', dot: 'bg-green-400',  rotate: 'rotate(-4deg)', top: '38%', left: '22%', anim: 'float-b 7s ease-in-out infinite 0.8s' },
@@ -181,7 +174,7 @@ const Home = () => {
   const [authModal, setAuthModal] = useState(null);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-[#eef0f6] text-gray-900 overflow-x-hidden">
       {authModal && (
         <AuthModal mode={authModal} onClose={() => setAuthModal(null)} onSwitch={(m) => setAuthModal(m)} />
       )}
@@ -275,19 +268,19 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Bottom fade to white */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          {/* Bottom fade into page background */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#eef0f6] to-transparent pointer-events-none" />
         </section>
 
         {/* ===== BRAND MARQUEE ===== */}
-        <section className="py-14 bg-white border-b border-gray-100">
-          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">
+        <section className="py-14 bg-[#eef0f6] border-b border-gray-200/70">
+          <p className="text-center text-xs font-semibold text-gray-500 uppercase tracking-widest mb-10">
             Detects subscriptions from the services you use
           </p>
           <div className="relative overflow-hidden">
             {/* Edge fades */}
-            <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#eef0f6] to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#eef0f6] to-transparent z-10 pointer-events-none" />
 
             <div className="flex animate-marquee w-max gap-14 items-center">
               {[...brandNames, ...brandNames, ...brandNames].map((name, i) => (
@@ -307,7 +300,7 @@ const Home = () => {
         </section>
 
         {/* ===== FEATURES ===== */}
-        <section className="py-24 bg-gray-50">
+        <section className="py-24 bg-[#e6eaf3]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn className="text-center mb-16">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
@@ -331,46 +324,17 @@ const Home = () => {
           </div>
         </section>
 
-        {/* ===== HOW IT WORKS ===== */}
-        <section className="py-24 bg-white border-t border-gray-100">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimateIn className="text-center mb-16">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">How it works</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Up and running in minutes</h2>
-              <p className="text-gray-500">Get started in minutes, not hours.</p>
-            </AnimateIn>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {steps.map((s, i) => (
-                <AnimateIn key={i} delay={i * 80}>
-                  <div className="glass-card p-6 text-center h-full flex flex-col items-center">
-                    {i < steps.length - 1 && (
-                      <div className="hidden lg:block absolute top-7 left-[60%] w-[80%] h-px bg-gradient-to-r from-indigo-200 to-transparent" />
-                    )}
-                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 text-white text-lg font-bold shadow-lg shadow-indigo-100">
-                      {s.num}
-                    </div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">{s.title}</h3>
-                    <p className="text-sm text-gray-500">{s.desc}</p>
-                  </div>
-                </AnimateIn>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ===== STATS ===== */}
-        <section className="py-24 relative overflow-hidden bg-[#0a0a1a]">
+        <section className="py-24 relative overflow-hidden bg-[#eef0f6] border-t border-gray-200/70">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-[-30%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/25 blur-[100px]" />
-            <div className="absolute bottom-[-20%] left-[-5%] w-[400px] h-[400px] rounded-full bg-indigo-600/25 blur-[80px]" />
+            <div className="absolute top-[-30%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-400/20 blur-[100px]" />
+            <div className="absolute bottom-[-20%] left-[-5%] w-[400px] h-[400px] rounded-full bg-indigo-400/20 blur-[80px]" />
           </div>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
           <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white mb-2">Built for real tracking</h2>
-              <p className="text-indigo-300 text-sm">Everything you need to stay on top of your spending</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Built for real tracking</h2>
+              <p className="text-indigo-600 text-sm">Everything you need to stay on top of your spending</p>
             </AnimateIn>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -382,20 +346,18 @@ const Home = () => {
               ].map((s, i) => (
                 <AnimateIn key={i} delay={i * 80}>
                   <div className="glass-card p-6 text-center">
-                    <div className="text-4xl font-bold text-white mb-1">{s.value}</div>
-                    <div className="text-sm font-semibold text-indigo-100 mb-0.5">{s.label}</div>
-                    <div className="text-xs text-indigo-300">{s.sub}</div>
+                    <div className="text-4xl font-bold text-gray-900 mb-1">{s.value}</div>
+                    <div className="text-sm font-semibold text-gray-800 mb-0.5">{s.label}</div>
+                    <div className="text-xs text-gray-500">{s.sub}</div>
                   </div>
                 </AnimateIn>
               ))}
             </div>
           </div>
-
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </section>
 
         {/* ===== FINAL CTA ===== */}
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-[#eef0f6]">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn>
               <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 shadow-2xl shadow-indigo-200">

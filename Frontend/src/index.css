@@ -239,20 +239,21 @@ html {
 
 /* Glassmorphism feature card */
 .glass-card {
-  background: rgba(217, 217, 217, 0.58);
-  border: 1px solid white;
-  box-shadow: 12px 17px 51px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 17px;
   cursor: pointer;
-  transition: all 0.5s;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
   user-select: none;
 }
 
 .glass-card:hover {
-  border: 1px solid black;
-  transform: scale(1.05);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 22px 50px rgba(79, 70, 229, 0.18);
+  transform: scale(1.04);
 }
 
 .glass-card:active {
