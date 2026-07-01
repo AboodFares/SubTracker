@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
-import { FaGithub, FaLinkedinIn, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { FaGithub, FaLinkedinIn } from 'react-icons/fa';
 
 const socialLinks = [
-  { href: 'https://github.com', icon: FaGithub, label: 'GitHub' },
-  { href: 'https://linkedin.com', icon: FaLinkedinIn, label: 'LinkedIn' },
-  { href: 'https://twitter.com', icon: FaTwitter, label: 'Twitter' },
-  { href: 'https://instagram.com', icon: FaInstagram, label: 'Instagram' },
+  { href: 'https://github.com/AboodFares/SubTracker', icon: FaGithub, label: 'GitHub' },
+  { href: 'https://www.linkedin.com/in/abdulrahman-fares-4a0707326/', icon: FaLinkedinIn, label: 'LinkedIn' },
 ];
 
 const Footer = () => {
@@ -65,7 +63,7 @@ const Footer = () => {
         {/* Bottom */}
         <div className="mt-10 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-600">
-            &copy; 2026 Sub-Tracker. All rights reserved.
+            &copy; 2026 Sub-Tracker. All rights reserved. &bull; Built by Fares Agency
           </p>
           <p className="text-xs text-gray-700">
             Bank linking via Plaid &bull; Gmail integration for smart detection

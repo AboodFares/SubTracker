@@ -5,11 +5,11 @@ const Header = ({ onSignIn, onGetStarted }) => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+    <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-sm border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="text-lg font-bold text-gray-900 hover:text-indigo-600 transition-colors">
+          <Link to="/" className="text-lg font-bold text-white hover:text-indigo-400 transition-colors">
             Sub-Tracker
           </Link>
 
@@ -27,14 +27,14 @@ const Header = ({ onSignIn, onGetStarted }) => {
                 {onSignIn ? (
                   <button
                     onClick={onSignIn}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   >
                     Sign In
                   </button>
                 ) : (
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   >
                     Sign In
                   </Link>

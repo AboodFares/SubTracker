@@ -115,55 +115,66 @@ const AuthModal = ({ mode, onClose, onSwitch }) => {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      <div className="relative w-full max-w-sm rounded-xl bg-gray-900 p-8 text-gray-100 shadow-2xl">
+        <button onClick={onClose} className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-white/10 hover:text-gray-200">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
-        <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
-          <button onClick={() => onSwitch('login')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${isLogin ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Sign In</button>
-          <button onClick={() => onSwitch('register')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${!isLogin ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Sign Up</button>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">{isLogin ? 'Welcome back' : 'Create your account'}</h2>
-          <p className="text-sm text-gray-500">{isLogin ? 'Sign in to manage your subscriptions' : "Start tracking in under a minute — it's free"}</p>
-        </div>
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-lg text-sm">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <p className="text-center text-2xl font-bold">{isLogin ? 'Login' : 'Sign up'}</p>
+
+        {error && <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2.5 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm bg-gray-50" placeholder="John Doe" />
+            <div className="text-sm">
+              <label htmlFor="auth-name" className="mb-1 block text-gray-400">Name</label>
+              <input id="auth-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full rounded-md border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 outline-none transition focus:border-violet-400" />
             </div>
           )}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2.5 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm bg-gray-50" placeholder="you@example.com" />
+          <div className="text-sm">
+            <label htmlFor="auth-email" className="mb-1 block text-gray-400">Email</label>
+            <input id="auth-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full rounded-md border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 outline-none transition focus:border-violet-400" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-4 py-2.5 border border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm bg-gray-50" placeholder="••••••••" />
-            {!isLogin && <p className="mt-1 text-xs text-gray-400">At least 6 characters</p>}
+          <div className="text-sm">
+            <label htmlFor="auth-password" className="mb-1 block text-gray-400">Password</label>
+            <input id="auth-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full rounded-md border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 outline-none transition focus:border-violet-400" />
+            {isLogin ? (
+              <div className="mt-2 flex justify-end text-xs">
+                <a href="#" className="text-gray-100 hover:underline hover:decoration-violet-400">Forgot Password ?</a>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">At least 6 characters</p>
+            )}
           </div>
-          <button type="submit" disabled={loading} className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold text-sm hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+          <button type="submit" disabled={loading} className="block w-full rounded-md bg-violet-400 py-3 text-center font-semibold text-gray-900 transition hover:bg-violet-300 disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? (isLogin ? 'Signing in…' : 'Creating account…') : (isLogin ? 'Sign in' : 'Create account')}
           </button>
         </form>
-        <div className="mt-5">
-          <div className="relative flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">Or continue with</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-          <button onClick={() => authAPI.googleLogin()} className="mt-3 w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+
+        <div className="flex items-center pt-4">
+          <div className="h-px flex-1 bg-gray-700" />
+          <p className="px-3 text-sm text-gray-400">Or continue with</p>
+          <div className="h-px flex-1 bg-gray-700" />
+        </div>
+
+        <div className="mt-3 flex justify-center">
+          <button onClick={() => authAPI.googleLogin()} aria-label="Log in with Google" className="flex items-center gap-2 rounded-md border border-gray-700 px-4 py-2.5 text-sm text-gray-200 transition hover:bg-white/5">
+            <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            {isLogin ? 'Sign in with Google' : 'Sign up with Google'}
+            Google
           </button>
         </div>
+
+        <p className="mt-6 text-center text-xs text-gray-400">
+          {isLogin ? "Don't have an account? " : 'Already have an account? '}
+          <button type="button" onClick={() => onSwitch(isLogin ? 'register' : 'login')} className="text-sm text-gray-100 hover:underline hover:decoration-violet-400">
+            {isLogin ? 'Sign up' : 'Sign in'}
+          </button>
+        </p>
       </div>
     </div>
   );
@@ -184,7 +195,7 @@ const Home = () => {
       <main className="flex-1">
 
         {/* ===== HERO ===== */}
-        <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-[#0a0a1a]">
+        <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-[#23252e]">
           {/* Animated gradient orbs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-600/30 blur-[120px] animate-orb-1" />
@@ -217,28 +228,11 @@ const Home = () => {
                   Connect Gmail and bank statements. Our AI automatically detects every recurring charge — so you always know where your money goes.
                 </p>
 
-                {!isAuthenticated ? (
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={() => setAuthModal('register')}
-                      className="px-7 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5"
-                    >
-                      Get Started Free
-                    </button>
-                    <button
-                      onClick={() => setAuthModal('login')}
-                      className="px-7 py-3.5 border border-white/20 text-white rounded-xl font-semibold text-base hover:bg-white/10 transition-all"
-                    >
-                      Sign In
-                    </button>
-                  </div>
-                ) : (
+                {isAuthenticated && (
                   <Link to="/app/dashboard" className="inline-block px-7 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5">
                     Go to Dashboard
                   </Link>
                 )}
-
-                <p className="mt-5 text-sm text-gray-500">Free to start · No credit card required</p>
               </div>
 
               {/* Right — floating subscription cards */}
@@ -303,20 +297,17 @@ const Home = () => {
         <section className="py-24 bg-[#e6eaf3]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn className="text-center mb-16">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest mb-3">Features</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Everything you need</h2>
-              <p className="text-gray-500 max-w-xl mx-auto">Powerful tools to find, track, and manage every subscription automatically.</p>
+              <p className="text-base font-semibold text-indigo-600 uppercase tracking-widest mb-4">Features</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 max-w-2xl mx-auto leading-snug">Powerful tools to find, track, and manage every subscription automatically.</p>
             </AnimateIn>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {features.map((f, i) => (
-                <AnimateIn key={i} delay={i * 100}>
-                  <div className="glass-card p-8 h-full text-left">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${f.iconBg} rounded-xl flex items-center justify-center mb-5 text-white shadow-md`}>
-                      {f.icon}
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">{f.description}</p>
+                <AnimateIn key={i} delay={i * 120}>
+                  <div className="glass-card group relative p-10 h-full text-left overflow-hidden">
+                    <span className="absolute top-0 left-0 h-1.5 w-0 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out group-hover:w-full" />
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">{f.title}</h3>
+                    <p className="text-base text-gray-600 leading-relaxed">{f.description}</p>
                   </div>
                 </AnimateIn>
               ))}
@@ -332,23 +323,22 @@ const Home = () => {
           </div>
 
           <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimateIn className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Built for real tracking</h2>
-              <p className="text-indigo-600 text-sm">Everything you need to stay on top of your spending</p>
+            <AnimateIn className="text-center mb-14">
+              <h2 className="text-4xl sm:text-5xl font-bold text-gray-900">Built for real tracking</h2>
             </AnimateIn>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 { value: '3', label: 'Detection Sources', sub: 'Email · Bank · Statements' },
-                { value: 'AI', label: 'Powered by GPT-4', sub: 'Smart extraction' },
+                { value: 'Auto', label: 'Smart Detection', sub: 'Finds every charge' },
                 { value: '5d', label: 'Early Alerts', sub: 'Before every renewal' },
                 { value: '24/7', label: 'Always Monitoring', sub: 'Automated scanning' },
               ].map((s, i) => (
-                <AnimateIn key={i} delay={i * 80}>
-                  <div className="glass-card p-6 text-center">
-                    <div className="text-4xl font-bold text-gray-900 mb-1">{s.value}</div>
-                    <div className="text-sm font-semibold text-gray-800 mb-0.5">{s.label}</div>
-                    <div className="text-xs text-gray-500">{s.sub}</div>
+                <AnimateIn key={i} delay={i * 100} className="h-full">
+                  <div className="glass-card p-8 text-center h-full flex flex-col justify-center">
+                    <div className="text-5xl font-bold text-gray-900 mb-2">{s.value}</div>
+                    <div className="text-base font-semibold text-gray-800 mb-0.5">{s.label}</div>
+                    <div className="text-sm text-gray-500">{s.sub}</div>
                   </div>
                 </AnimateIn>
               ))}
@@ -360,22 +350,21 @@ const Home = () => {
         <section className="py-24 bg-[#eef0f6]">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn>
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 shadow-2xl shadow-indigo-200">
+              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 shadow-2xl shadow-emerald-200">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
                 <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
                 <div className="relative px-8 py-16 sm:px-16 text-center">
                   <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to take control?</h2>
                   <p className="text-lg text-white/70 mb-8 max-w-lg mx-auto">Stop overpaying for forgotten subscriptions. Start tracking in under a minute.</p>
                   {!isAuthenticated ? (
-                    <button onClick={() => setAuthModal('register')} className="inline-block px-8 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-all shadow-lg hover:-translate-y-0.5">
+                    <button onClick={() => setAuthModal('register')} className="inline-block px-8 py-3.5 bg-white text-emerald-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-all shadow-lg hover:-translate-y-0.5">
                       Get Started Free
                     </button>
                   ) : (
-                    <Link to="/app/dashboard" className="inline-block px-8 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-all shadow-lg hover:-translate-y-0.5">
+                    <Link to="/app/dashboard" className="inline-block px-8 py-3.5 bg-white text-emerald-700 rounded-xl font-semibold text-base hover:bg-gray-50 transition-all shadow-lg hover:-translate-y-0.5">
                       Go to Dashboard
                     </Link>
                   )}
-                  <p className="mt-4 text-sm text-white/40">Free to start · No credit card required</p>
                 </div>
               </div>
             </AnimateIn>
