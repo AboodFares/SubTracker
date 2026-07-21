@@ -13,6 +13,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // listen on all interfaces (IPv4 + IPv6) so localhost always resolves
     port: 5174,
     proxy: {
       '/api': {

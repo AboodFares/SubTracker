@@ -160,7 +160,7 @@ const EXTRACTION_SCHEMA = {
     properties: {
       isSubscription: { type: 'boolean' },
       serviceName: { type: ['string', 'null'] },
-      eventType: { type: ['string', 'null'], enum: ['start', 'renewal', 'cancellation', 'change', null] },
+      eventType: { anyOf: [{ type: 'string', enum: ['start', 'renewal', 'cancellation', 'change'] }, { type: 'null' }] },
       amount: { type: ['number', 'null'] },
       currency: { type: ['string', 'null'] },
       startDate: { type: ['string', 'null'] },
