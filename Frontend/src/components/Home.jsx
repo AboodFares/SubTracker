@@ -211,28 +211,40 @@ const Home = () => {
 
               {/* Left — copy */}
               <div>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-8">
+                <div className="hero-rise inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-8">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-sm text-gray-300">AI-powered subscription tracking</span>
                 </div>
 
-                <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-[1.08] mb-6 text-white">
+                <h1 className="hero-rise text-5xl sm:text-6xl font-bold tracking-tight leading-[1.08] mb-6 text-white" style={{ animationDelay: '120ms' }}>
                   Never lose track
                   <br />
-                  <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <span className="animate-gradient-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                     of your money
                   </span>
                 </h1>
 
-                <p className="text-lg text-gray-400 mb-10 leading-relaxed max-w-lg">
+                <p className="hero-rise text-lg text-gray-400 mb-10 leading-relaxed max-w-lg" style={{ animationDelay: '240ms' }}>
                   Connect Gmail and bank statements. Our AI automatically detects every recurring charge — so you always know where your money goes.
                 </p>
 
-                {isAuthenticated && (
-                  <Link to="/app/dashboard" className="inline-block px-7 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5">
-                    Go to Dashboard
-                  </Link>
-                )}
+                <div className="hero-rise flex flex-wrap items-center gap-4" style={{ animationDelay: '360ms' }}>
+                  {isAuthenticated ? (
+                    <Link to="/app/dashboard" className="btn-shimmer inline-block px-7 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5">
+                      Go to Dashboard
+                    </Link>
+                  ) : (
+                    <button onClick={() => setAuthModal('register')} className="btn-shimmer inline-block px-7 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-base hover:from-indigo-400 hover:to-purple-400 transition-all shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 cursor-pointer">
+                      Get Started Free
+                    </button>
+                  )}
+                  <a href="#features" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl border border-white/15 bg-white/5 text-gray-300 font-semibold text-base hover:bg-white/10 hover:text-white transition-all backdrop-blur-sm">
+                    Explore features
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                  </a>
+                </div>
               </div>
 
               {/* Right — floating subscription cards */}
@@ -294,7 +306,7 @@ const Home = () => {
         </section>
 
         {/* ===== FEATURES ===== */}
-        <section className="py-24 bg-[#e6eaf3]">
+        <section id="features" className="py-24 bg-[#e6eaf3] scroll-mt-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimateIn className="text-center mb-16">
               <p className="text-base font-semibold text-indigo-600 uppercase tracking-widest mb-4">Features</p>
@@ -306,6 +318,9 @@ const Home = () => {
                 <AnimateIn key={i} delay={i * 120}>
                   <div className="glass-card group relative p-10 h-full text-left overflow-hidden">
                     <span className="absolute top-0 left-0 h-1.5 w-0 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out group-hover:w-full" />
+                    <div className={`icon-tile inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${f.iconBg} text-white shadow-lg mb-5`}>
+                      {f.icon}
+                    </div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-3">{f.title}</h3>
                     <p className="text-base text-gray-600 leading-relaxed">{f.description}</p>
                   </div>
@@ -336,7 +351,7 @@ const Home = () => {
               ].map((s, i) => (
                 <AnimateIn key={i} delay={i * 100} className="h-full">
                   <div className="glass-card p-8 text-center h-full flex flex-col justify-center">
-                    <div className="text-5xl font-bold text-gray-900 mb-2">{s.value}</div>
+                    <div className="text-5xl font-bold bg-gradient-to-br from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">{s.value}</div>
                     <div className="text-base font-semibold text-gray-800 mb-0.5">{s.label}</div>
                     <div className="text-sm text-gray-500">{s.sub}</div>
                   </div>
