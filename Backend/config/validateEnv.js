@@ -11,7 +11,7 @@ function validateEnv() {
   ];
 
   const optional = [
-    'OPENAI_API_KEY',
+    'ANTHROPIC_API_KEY',
     'PLAID_CLIENT_ID',
     'PLAID_SECRET_KEY',
     'PLAID_ENV',
@@ -35,8 +35,8 @@ function validateEnv() {
   });
 
   // Check optional but recommended variables
-  if (!process.env.OPENAI_API_KEY) {
-    warnings.push('OPENAI_API_KEY - Email processing will not work');
+  if (!process.env.ANTHROPIC_API_KEY) {
+    warnings.push('ANTHROPIC_API_KEY - AI email processing will not work');
   }
 
   if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET_KEY) {

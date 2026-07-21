@@ -5,12 +5,15 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "ml:dataset": "./ml/.venv/bin/python ml/generate_dataset.py",
+    "ml:retrain": "./ml/.venv/bin/python ml/train.py"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.4",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -26,7 +29,6 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
-    "openai": "^6.15.0",
     "pdf-parse": "^1.1.1",
     "plaid": "^41.0.0",
     "stripe": "^20.1.0"

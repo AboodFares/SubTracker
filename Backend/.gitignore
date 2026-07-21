@@ -19,3 +19,7 @@ uploads/
 # Build
 dist/
 build/
+
+# ML
+ml/.venv/
+ml/__pycache__/

@@ -1,0 +1,7 @@
+{
+  "trained_at": "2026-07-21T19:17:41.797890+00:00",
+  "n_samples": 3249,
+  "test_accuracy": 0.9985,
+  "confidence_threshold": 0.9,
+  "sklearn_pipeline": "TfidfVectorizer(char_wb 2-5) + LogisticRegression"
+}

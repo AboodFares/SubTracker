@@ -7,6 +7,7 @@ const Subscription = require('../models/Subscription');
 const BankStatement = require('../models/BankStatement');
 const { extractTextFromPDF } = require('../services/pdfService');
 const { analyzeStatementTransactions } = require('../services/aiService');
+const { runHybridStatementAnalysis } = require('../services/mlClassifier');
 const { findExistingSubscription } = require('../services/subscriptionService');
 
 // Multer config: memory storage, PDF only, 10MB limit
@@ -99,8 +100,20 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
         }
       }
 
-      // Step 4: Send raw text to AI for subscription detection with cross-PDF context
-      const detectedSubscriptions = await analyzeStatementTransactions(rawText, previousSubscriptions);
+      // Step 4: Detect subscriptions — hybrid ML+GPT first, GPT-only as fallback.
+      // The local model drops obvious non-subscription lines for free and only
+      // uncertain lines reach GPT. Returns null if the model/Python is
+      // unavailable, in which case the original full-text GPT flow runs.
+      let detectedSubscriptions;
+      let mlStats = null;
+      const hybrid = await runHybridStatementAnalysis(rawText, previousSubscriptions);
+      if (hybrid) {
+        detectedSubscriptions = hybrid.subscriptions;
+        mlStats = hybrid.stats;
+      } else {
+        console.log('[StatementUpload] Local ML unavailable — using GPT-only flow');
+        detectedSubscriptions = await analyzeStatementTransactions(rawText, previousSubscriptions);
+      }
 
       // Step 5: Save results
       statement.totalTransactions = detectedSubscriptions.length;
@@ -158,7 +171,8 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
       res.status(200).json({
         success: true,
         message: `Found ${detectedSubscriptions.length} potential subscriptions from ${numPages}-page statement`,
-        statement
+        statement,
+        mlStats // null when the GPT-only fallback ran
       });
 
     } catch (processingError) {
@@ -178,7 +192,7 @@ router.post('/upload', authenticateUser, upload.single('statement'), async (req,
       return res.status(400).json({ success: false, message: 'Only PDF files are allowed' });
     }
     if (error.message?.includes('quota') || error.status === 429) {
-      return res.status(429).json({ success: false, message: 'OpenAI API quota exceeded. Please try again later.' });
+      return res.status(429).json({ success: false, message: 'AI rate limit exceeded. Please try again later.' });
     }
 
     res.status(500).json({
