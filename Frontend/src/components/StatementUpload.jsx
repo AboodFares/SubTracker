@@ -188,7 +188,7 @@ const StatementUpload = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className="flex flex-col items-center gap-4 mt-28"
+        className="flex flex-col items-center gap-4 mt-40"
       >
         <div className="folder-container">
           <div className="folder">
