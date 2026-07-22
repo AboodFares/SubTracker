@@ -1,0 +1,154 @@
+# CI/CD for Sub-Tracker
+#
+# CI  — every push and pull request: lint, test, and build both halves of the app.
+# CD  — pushes to main only: deploy the frontend to Vercel (the backend is not
+#       hosted on Vercel — root vercel.json only builds Frontend/dist).
+#
+# Reading tips if you're new to Actions:
+# - Each "job" runs on a fresh Ubuntu virtual machine.
+# - Jobs run in PARALLEL unless one lists another in "needs:".
+# - "working-directory" saves typing "cd Backend &&" in every step.
+# - ${{ ... }} is the expression syntax for variables/secrets.
+
+name: CI/CD
+
+on:
+  push:            # runs on every branch push
+  pull_request:    # ...and on every PR (so reviewers see red/green checks)
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Backend: lint → syntax-check → smoke/unit tests
+  # ──────────────────────────────────────────────────────────────
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+
+    # The smoke tests boot the real server, and the server exits if it can't
+    # reach MongoDB. A "service container" runs a throwaway MongoDB next to
+    # the job — like a mini docker-compose for CI.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    # Dummy values for env vars the server validates on startup.
+    # Nothing here is a real secret — the tests never call Google/Claude/Plaid.
+    env:
+      MONGODB_URI: mongodb://localhost:27017/subtracker-ci
+      JWT_SECRET: ci-test-secret-not-used-in-production
+      GOOGLE_CLIENT_ID: ci-dummy
+      GOOGLE_CLIENT_SECRET: ci-dummy
+      GOOGLE_REDIRECT_URI: http://localhost:3000/api/auth/google/callback
+      ANTHROPIC_API_KEY: ci-dummy-key
+
+    steps:
+      # Download the repo onto the VM
+      - uses: actions/checkout@v4
+
+      # Install Node 22 and cache node_modules downloads between runs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+
+      # "npm ci" = clean install exactly from package-lock.json
+      # (faster + reproducible, unlike "npm install")
+      - name: Install dependencies
+        run: npm ci
+
+      # ESLint catches bugs and style issues (config: Backend/eslint.config.js)
+      - name: Lint
+        run: npm run lint
+
+      # Plain JS has no compile step, so this is the closest thing:
+      # ask Node to parse every file and fail on syntax errors
+      - name: Syntax check (build equivalent)
+        run: |
+          find . -name "*.js" -not -path "./node_modules/*" -not -path "./ml/*" \
+            -exec node --check {} +
+
+      # Smoke tests boot the real Express app and hit real routes;
+      # unit tests cover pure logic (see Backend/test/)
+      - name: Run tests
+        run: npm test
+
+  # ──────────────────────────────────────────────────────────────
+  # Frontend: lint → production build
+  # ──────────────────────────────────────────────────────────────
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ESLint with React rules (config: Frontend/eslint.config.mjs)
+      - name: Lint
+        run: npm run lint
+
+      # Vite production build — fails on import errors, bad JSX, etc.
+      # This is the frontend's "compile check"
+      - name: Build
+        run: npm run build
+
+  # ──────────────────────────────────────────────────────────────
+  # CD: deploy frontend to Vercel — ONLY on pushes to main,
+  # and ONLY after both CI jobs above are green
+  # ──────────────────────────────────────────────────────────────
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]                     # wait for CI to pass
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # NOTE: if your Vercel project is connected to this GitHub repo in the
+      # Vercel dashboard ("Git Integration"), Vercel already auto-deploys on
+      # push and you DON'T need this job or the secrets — it will just skip.
+      #
+      # If it's NOT connected, add these three repo secrets
+      # (GitHub → Settings → Secrets and variables → Actions):
+      #   VERCEL_TOKEN       — vercel.com → Account Settings → Tokens
+      #   VERCEL_ORG_ID      — from `vercel link`, in .vercel/project.json
+      #   VERCEL_PROJECT_ID  — same file
+      - name: Check for Vercel credentials
+        id: creds
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_TOKEN secret not set — skipping deploy step."
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.creds.outputs.found == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm install -g vercel
+          # pull  = fetch the project's settings/env from Vercel
+          # build = run the build locally in CI (uses root vercel.json)
+          # deploy --prebuilt = upload the already-built output to production
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

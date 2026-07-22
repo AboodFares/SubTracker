@@ -104,7 +104,7 @@ async function fetchSubscriptionEmails(oauth2Client, options = {}) {
 
   } catch (error) {
     console.error('Error fetching subscription emails:', error);
-    throw new Error(`Failed to fetch emails: ${error.message}`);
+    throw new Error(`Failed to fetch emails: ${error.message}`, { cause: error });
   }
 }
 

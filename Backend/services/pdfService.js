@@ -14,9 +14,9 @@ async function extractTextFromPDF(buffer) {
     };
   } catch (error) {
     if (error.message && error.message.includes('encrypt')) {
-      throw new Error('This PDF appears to be password-protected. Please upload an unprotected statement.');
+      throw new Error('This PDF appears to be password-protected. Please upload an unprotected statement.', { cause: error });
     }
-    throw new Error(`Failed to parse PDF: ${error.message}`);
+    throw new Error(`Failed to parse PDF: ${error.message}`, { cause: error });
   }
 }
 

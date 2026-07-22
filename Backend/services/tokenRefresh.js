@@ -54,7 +54,7 @@ async function refreshGoogleToken(user) {
     // Check if it's an invalid_grant error (refresh token expired/invalid)
     if (error.message?.includes('invalid_grant') || error.response?.data?.error === 'invalid_grant') {
       console.error(`[tokenRefresh] Refresh token is invalid/expired for user: ${user.email}`);
-      throw new Error('Refresh token is invalid or expired. Please reconnect your Google account.');
+      throw new Error('Refresh token is invalid or expired. Please reconnect your Google account.', { cause: error });
     }
     
     throw error;

@@ -104,7 +104,7 @@ async function refreshAccessToken(bankConnection) {
         bankConnection.status = 'error';
         bankConnection.errorMessage = `Token expired: ${errorMessage}. Please reconnect your bank account.`;
         await bankConnection.save();
-        throw new Error('Access token expired. Please reconnect your bank account.');
+        throw new Error('Access token expired. Please reconnect your bank account.', { cause: error });
       }
       // For other errors, still throw but don't mark as error
       throw error;
