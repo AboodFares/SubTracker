@@ -1,0 +1,9 @@
+# FastAPI web framework + the ASGI server that runs it
+fastapi
+uvicorn[standard]
+
+# The classifier's runtime. scikit-learn is PINNED to 1.6.1 — the version that
+# trained the committed model — so predictions are identical and joblib doesn't
+# print version-mismatch warnings. joblib loads the .joblib model file.
+scikit-learn==1.6.1
+joblib

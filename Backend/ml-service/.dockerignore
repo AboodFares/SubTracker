@@ -1,0 +1,5 @@
+# Nothing extra needs copying into the ml-service image — just app.py and
+# requirements.txt. Keep caches/venvs out if they ever appear here.
+__pycache__
+*.pyc
+.venv

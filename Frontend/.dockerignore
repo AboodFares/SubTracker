@@ -1,0 +1,13 @@
+# Files NOT copied into the frontend build.
+# NOTE: .dockerignore has no inline comments — patterns must be bare lines.
+
+# reinstalled fresh via `npm ci`
+node_modules
+
+# rebuilt inside the image
+dist
+
+.git
+*.md
+Dockerfile
+.dockerignore

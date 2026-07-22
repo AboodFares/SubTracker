@@ -1,0 +1,74 @@
+# docker-compose: run the WHOLE stack locally with one command.
+#
+#   docker compose up --build      → build images and start everything
+#   docker compose down            → stop and remove the containers
+#   docker compose down -v         → also delete the MongoDB data volume
+#
+# Three services on a shared private network. Inside that network they reach
+# each other by service name (the backend talks to "mongo", not localhost).
+
+services:
+  # ── MongoDB: the database ──
+  mongo:
+    image: mongo:7                 # official image, no build needed
+    ports:
+      - "27017:27017"              # expose to your host so you can inspect it with Compass
+    volumes:
+      - mongo-data:/data/db        # named volume = data survives `compose down`
+
+  # ── ML classifier: the FastAPI + scikit-learn service ──
+  ml-service:
+    build: ./Backend/ml-service    # build from Backend/ml-service/Dockerfile
+    ports:
+      - "8000:8000"                # exposed so you can curl it directly to test
+    volumes:
+      # Mount the trained model read-only from the backend's ml/model folder.
+      # Single source of truth: after `npm run ml:retrain`, just restart this
+      # service and it loads the new model — no image rebuild needed.
+      - ./Backend/ml/model:/models:ro
+    # Make Python print() flush immediately so our "[ml-service] model loaded"
+    # startup line shows up in `docker-compose logs` right away (Python buffers
+    # stdout by default when it's not a terminal).
+    environment:
+      PYTHONUNBUFFERED: "1"
+
+  # ── Backend: the Express API ──
+  backend:
+    build: ./Backend               # build from Backend/Dockerfile
+    ports:
+      - "3000:3000"
+    # Load your real secrets (ANTHROPIC_API_KEY, GOOGLE_*, JWT_SECRET, ...)
+    # from the existing .env file — no need to duplicate them here.
+    env_file:
+      - ./Backend/.env
+    # These override whatever's in .env, to wire the app to THIS compose stack.
+    # `environment` always wins over `env_file` in compose.
+    environment:
+      # Use the in-network Mongo container instead of Atlas. Delete this line
+      # to use the MONGODB_URI from your .env (e.g. your Atlas cluster) instead.
+      MONGODB_URI: mongodb://mongo:27017/subtracker
+      # The browser loads the frontend at :8080, so CORS must allow that origin.
+      FRONTEND_URL: http://localhost:8080
+      # Reach the classifier by its compose service name (not localhost).
+      ML_SERVICE_URL: http://ml-service:8000
+      PORT: 3000
+    depends_on:
+      - mongo                      # start these before backend (ordering only)
+      - ml-service
+
+  # ── Frontend: React build served by nginx ──
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        # Baked into the JS bundle at build time. The browser (on your host)
+        # calls the backend at localhost:3000, which compose publishes above.
+        VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "8080:80"                  # visit the app at http://localhost:8080
+    depends_on:
+      - backend
+
+# Named volume for MongoDB's data files
+volumes:
+  mongo-data:

@@ -1,0 +1,25 @@
+# Files NOT copied into the backend image (like .gitignore, but for docker build).
+# Keeping these out makes builds faster and images smaller/safer.
+#
+# IMPORTANT: .dockerignore does NOT support inline (end-of-line) comments —
+# each non-comment line is a literal pattern. Comments must be on their own line.
+
+# reinstalled fresh inside the image via `npm ci`
+node_modules
+
+# host (macOS) virtualenv — the model now runs in the ml-service container
+ml/.venv
+**/.venv
+ml/__pycache__
+
+# SECRETS — injected at runtime, never baked into an image
+.env
+
+.git
+
+# tests don't run in the production image
+test
+
+*.md
+Dockerfile
+.dockerignore

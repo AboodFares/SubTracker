@@ -10,30 +10,28 @@
  *   GPT's verdicts on uncertain lines are appended to ml/data/gpt_labeled.csv
  *   so `npm run ml:retrain` makes the local model smarter over time.
  *
- * If anything is missing (model file, Python, venv) every function degrades
- * to null and the caller falls back to the original GPT-only flow.
+ * The classifier now runs as a separate FastAPI service (Backend/ml-service),
+ * reached over HTTP. If that service is unreachable (down, timeout, error),
+ * classifyLines() returns null and the caller falls back to the Claude flow —
+ * exactly as it did when the model was a spawned Python subprocess.
  */
 
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { analyzeFilteredTransactions } = require('./aiService');
 
 const ML_DIR = path.join(__dirname, '..', 'ml');
-const MODEL_PATH = path.join(ML_DIR, 'model', 'classifier.joblib');
 const GPT_LABELS_PATH = path.join(ML_DIR, 'data', 'gpt_labeled.csv');
-const VENV_PYTHON = path.join(ML_DIR, '.venv', 'bin', 'python');
-const CLASSIFY_SCRIPT = path.join(ML_DIR, 'classify.py');
-const PYTHON_TIMEOUT_MS = 15000;
 
-/** Prefer the project venv's Python; fall back to system python3. */
-function resolvePython() {
-  return fs.existsSync(VENV_PYTHON) ? VENV_PYTHON : 'python3';
-}
+// Where the FastAPI classifier lives. In docker-compose this is the service
+// name (http://ml-service:8000); for local dev it defaults to localhost.
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+const REQUEST_TIMEOUT_MS = 15000;
 
-/** Cheap availability check so we can skip spawning a process entirely. */
+/** The classifier is "available" as long as we have a URL to try. Whether it
+ *  actually answers is decided per-request (a failed call → null → fallback). */
 function isModelAvailable() {
-  return fs.existsSync(MODEL_PATH) && fs.existsSync(CLASSIFY_SCRIPT);
+  return Boolean(ML_SERVICE_URL);
 }
 
 /**
@@ -61,50 +59,45 @@ function extractTransactionLines(rawText) {
 }
 
 /**
- * Run the local model on a batch of lines via the Python subprocess.
- * Resolves to the parsed result object, or null on ANY failure
- * (missing python, timeout, bad JSON, model unavailable...).
+ * Run the local model on a batch of lines by POSTing to the FastAPI service.
+ * Resolves to the parsed result object ({ available, threshold, results }),
+ * or null on ANY failure (service down, timeout, HTTP error, unavailable) —
+ * the same null-means-fallback contract the subprocess version had.
  */
-function classifyLines(lines) {
-  return new Promise((resolve) => {
-    if (!isModelAvailable() || lines.length === 0) return resolve(null);
+async function classifyLines(lines) {
+  if (lines.length === 0) return null;
 
-    const proc = spawn(resolvePython(), [CLASSIFY_SCRIPT], {
-      stdio: ['pipe', 'pipe', 'pipe']
+  // AbortController enforces a hard timeout: if the service doesn't answer in
+  // REQUEST_TIMEOUT_MS, we abort the fetch and fall back rather than hang.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${ML_SERVICE_URL}/classify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines }),
+      signal: controller.signal,
     });
 
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-    const settle = (value) => { if (!settled) { settled = true; resolve(value); } };
+    if (!res.ok) {
+      console.warn(`[ML] classifier service HTTP ${res.status} — falling back to Claude-only`);
+      return null;
+    }
 
-    const timer = setTimeout(() => {
-      proc.kill('SIGKILL');
-      console.warn('[ML] classify.py timed out — falling back to GPT-only flow');
-      settle(null);
-    }, PYTHON_TIMEOUT_MS);
-
-    proc.stdout.on('data', (d) => { stdout += d; });
-    proc.stderr.on('data', (d) => { stderr += d; });
-    proc.on('error', () => { clearTimeout(timer); settle(null); }); // python not found
-    proc.on('close', () => {
-      clearTimeout(timer);
-      try {
-        const parsed = JSON.parse(stdout);
-        if (!parsed.available) {
-          console.warn(`[ML] local model unavailable: ${parsed.reason}`);
-          return settle(null);
-        }
-        settle(parsed);
-      } catch {
-        if (stderr) console.warn(`[ML] classify.py error: ${stderr.slice(0, 300)}`);
-        settle(null);
-      }
-    });
-
-    proc.stdin.write(JSON.stringify({ lines }));
-    proc.stdin.end();
-  });
+    const parsed = await res.json();
+    if (!parsed.available) {
+      console.warn(`[ML] classifier unavailable: ${parsed.reason}`);
+      return null;
+    }
+    return parsed;
+  } catch (err) {
+    // Service unreachable, DNS failure, or timeout/abort — degrade gracefully
+    console.warn(`[ML] classifier service unreachable (${err.name}) — falling back to Claude-only`);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Escape one CSV field (quotes doubled, field wrapped in quotes). */
