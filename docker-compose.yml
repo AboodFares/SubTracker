@@ -18,7 +18,9 @@ services:
 
   # ── ML classifier: the FastAPI + scikit-learn service ──
   ml-service:
-    build: ./Backend/ml-service    # build from Backend/ml-service/Dockerfile
+    build:
+      context: ./Backend           # context = Backend so the Dockerfile can
+      dockerfile: ml-service/Dockerfile  # copy the model from ml/model
     ports:
       - "8000:8000"                # exposed so you can curl it directly to test
     volumes:

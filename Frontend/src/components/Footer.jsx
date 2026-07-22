@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { FaGithub, FaLinkedinIn } from 'react-icons/fa';
 
 const socialLinks = [
-  { href: 'https://github.com/AboodFares/SubTracker', icon: FaGithub, label: 'GitHub' },
+  { href: 'https://github.com/AboodFares/', icon: FaGithub, label: 'GitHub' },
   { href: 'https://www.linkedin.com/in/abdulrahman-fares-4a0707326/', icon: FaLinkedinIn, label: 'LinkedIn' },
 ];
 

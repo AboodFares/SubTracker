@@ -1,0 +1,56 @@
+# render.yaml — Render "Blueprint": declares the two cloud servers so Render can
+# create them from your repo. Think of it as docker-compose.yml, but for Render's
+# cloud instead of your laptop. (The frontend stays on Vercel; MongoDB stays on Atlas.)
+#
+# HOW TO USE:
+#   1. Push this repo to GitHub.
+#   2. Render dashboard → New → Blueprint → pick this repo. Render reads this file
+#      and creates both services.
+#   3. Fill in the secret env vars (marked `sync: false`) in the dashboard.
+#   4. After the ml-service deploys, copy its URL and set ML_SERVICE_URL on the
+#      backend (see the note on that var below).
+
+services:
+  # ── Python ML classifier (FastAPI) ──
+  - type: web
+    name: subtracker-ml-service
+    runtime: docker
+    plan: free
+    # Build the image from the Backend folder using the ml-service Dockerfile
+    # (the model gets baked into the image — no shared volume in the cloud).
+    dockerContext: ./Backend
+    dockerfilePath: ./Backend/ml-service/Dockerfile
+    healthCheckPath: /health          # Render pings this to know the service is up
+
+  # ── Node backend (Express API) ──
+  - type: web
+    name: subtracker-backend
+    runtime: docker
+    plan: free
+    dockerContext: ./Backend
+    dockerfilePath: ./Backend/Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      # --- wiring: where to find the ML service ---
+      # Render can't auto-build a full URL for another service, so after the
+      # ml-service deploys, copy its URL (e.g. https://subtracker-ml-service.onrender.com)
+      # and paste it here in the dashboard. Until then the backend just falls
+      # back to Claude for classification (the app still works).
+      - key: ML_SERVICE_URL
+        sync: false
+
+      # --- secrets: enter these in the Render dashboard, never commit them ---
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MONGODB_URI          # your MongoDB Atlas connection string
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI  # https://subtracker-backend.onrender.com/api/auth/google/callback
+        sync: false
+      - key: FRONTEND_URL         # your Vercel URL, for CORS
+        sync: false
