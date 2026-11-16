@@ -10,20 +10,6 @@ function validateEnv() {
     'GOOGLE_REDIRECT_URI'
   ];
 
-  const optional = [
-    'ANTHROPIC_API_KEY',
-    'PLAID_CLIENT_ID',
-    'PLAID_SECRET_KEY',
-    'PLAID_ENV',
-    'BACKEND_URL',
-    'FRONTEND_URL',
-    'EMAIL_HOST',
-    'EMAIL_PORT',
-    'EMAIL_USER',
-    'EMAIL_PASS',
-    'ENCRYPTION_KEY'
-  ];
-
   const missing = [];
   const warnings = [];
 

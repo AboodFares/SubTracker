@@ -2,7 +2,6 @@ const Subscription = require('../models/Subscription');
 const PotentialSubscription = require('../models/PotentialSubscription');
 const ProcessedEmail = require('../models/ProcessedEmail');
 const { getSubscriptionEmails } = require('./filter');
-const { oauth2Client } = require('../config/oAuth');
 
 /**
  * Detect if a transaction has a recurring pattern
@@ -222,7 +221,7 @@ async function analyzeTransaction(userId, transaction, oauth2Client) {
 /**
  * Check for emails without matching transactions
  */
-async function findEmailsWithoutTransactions(userId, oauth2Client) {
+async function findEmailsWithoutTransactions(userId, _oauth2Client) {
   try {
     // Get all processed emails that created subscriptions
     const processedEmails = await ProcessedEmail.find({

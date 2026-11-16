@@ -308,7 +308,7 @@ router.get('/me', async (req, res) => {
         picture: user.picture
       }
     });
-  } catch (error) {
+  } catch {
     res.status(401).json({
       success: false,
       message: 'Invalid token'

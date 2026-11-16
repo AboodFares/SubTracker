@@ -180,7 +180,7 @@ async function processUserEmails(user) {
             emailId: email.id,
             status: 'failed'
           });
-        } catch (saveError) {
+        } catch {
           // Ignore duplicate key errors (email already marked)
         }
         

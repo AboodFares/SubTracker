@@ -38,8 +38,7 @@ function parseTransactions(rawText) {
     /^(\d{1,2}-\d{1,2}(?:-\d{2,4})?)/,               // DD-MM or DD-MM-YYYY
   ];
 
-  // Amount pattern: optional negative sign, optional $, digits with optional decimal
-  const amountPattern = /[-−]?\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})?$/;
+  // Amount anywhere in a line: optional negative sign, optional $, digits with decimals
   const amountInLinePattern = /[-−]?\$?\d{1,3}(?:,\d{3})*\.\d{2}/g;
 
   for (const line of lines) {

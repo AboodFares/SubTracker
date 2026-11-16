@@ -221,7 +221,7 @@ async function syncTransactions(userId) {
     let accessToken;
     try {
       accessToken = await refreshAccessToken(bankConnection);
-    } catch (error) {
+    } catch {
       // If refresh fails, try decrypting anyway (might still be valid for this call)
       accessToken = decryptToken(bankConnection.accessToken);
     }
@@ -368,7 +368,7 @@ async function checkIfRecurring(userId, transaction) {
     });
 
     return similarTransactions.length > 0;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

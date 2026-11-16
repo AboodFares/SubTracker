@@ -8,7 +8,6 @@ const {
   createLinkToken,
   exchangePublicToken,
   syncTransactions,
-  analyzeTransactionsForSubscriptions,
   disconnectBank
 } = require('../services/plaidService');
 const { processSubscriptionData } = require('../services/subscriptionService');
