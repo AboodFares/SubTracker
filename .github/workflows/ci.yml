@@ -1,8 +1,8 @@
 # CI/CD for Sub-Tracker
 #
 # CI  — every push and pull request: lint, test, and build both halves of the app.
-# CD  — pushes to main only: deploy the frontend to Vercel (the backend is not
-#       hosted on Vercel — root vercel.json only builds Frontend/dist).
+# CD  — pushes to main only, after CI passes: deploy the frontend to Vercel and
+#       the backend + ML service to Render (via deploy hooks).
 #
 # Reading tips if you're new to Actions:
 # - Each "job" runs on a fresh Ubuntu virtual machine.
@@ -108,7 +108,7 @@ jobs:
         run: npm run build
 
   # ──────────────────────────────────────────────────────────────
-  # CD: deploy frontend to Vercel — ONLY on pushes to main,
+  # CD: deploy frontend (Vercel) + backend (Render) — ONLY on pushes to main,
   # and ONLY after both CI jobs above are green
   # ──────────────────────────────────────────────────────────────
   deploy:
@@ -152,3 +152,35 @@ jobs:
           vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
           vercel build --prod --token="$VERCEL_TOKEN"
           vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      # ── Backend (Render) ──
+      # Render's own Auto-Deploy would ship every push, even when tests fail.
+      # Instead: turn Auto-Deploy OFF in Render (service → Settings → Build &
+      # Deploy → Auto-Deploy: Off) and let this job trigger the deploy, so the
+      # backend only goes live after the CI jobs above pass.
+      #
+      # Repo secrets (each service → Settings → Deploy Hook → copy URL):
+      #   RENDER_BACKEND_DEPLOY_HOOK — subtracker-backend
+      #   RENDER_ML_DEPLOY_HOOK      — subtracker-ml-service (optional)
+      # A missing secret just skips that service.
+      - name: Deploy backend to Render
+        env:
+          HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::RENDER_BACKEND_DEPLOY_HOOK not set — skipping backend deploy."
+            exit 0
+          fi
+          # Deploy hook = a secret URL; POSTing to it starts a deploy of the
+          # latest commit on the service's branch
+          curl -fsS -X POST "$HOOK"
+
+      - name: Deploy ML service to Render
+        env:
+          HOOK: ${{ secrets.RENDER_ML_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::RENDER_ML_DEPLOY_HOOK not set — skipping ML service deploy."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK"

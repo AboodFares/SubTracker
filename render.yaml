@@ -14,6 +14,7 @@ services:
   # ── Python ML classifier (FastAPI) ──
   - type: web
     name: subtracker-ml-service
+    autoDeploy: false   # deployed by GitHub Actions after CI passes (see ci.yml)
     runtime: docker
     plan: free
     # Build the image from the Backend folder using the ml-service Dockerfile
@@ -25,6 +26,7 @@ services:
   # ── Node backend (Express API) ──
   - type: web
     name: subtracker-backend
+    autoDeploy: false   # deployed by GitHub Actions after CI passes (see ci.yml)
     runtime: docker
     plan: free
     dockerContext: ./Backend
