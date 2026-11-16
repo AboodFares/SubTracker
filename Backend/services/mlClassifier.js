@@ -18,7 +18,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { analyzeFilteredTransactions } = require('./aiService');
+const { analyzeFilteredTransactions, analyzeStatementTransactions } = require('./aiService');
 
 const ML_DIR = path.join(__dirname, '..', 'ml');
 const GPT_LABELS_PATH = path.join(ML_DIR, 'data', 'gpt_labeled.csv');
@@ -168,24 +168,35 @@ async function runHybridStatementAnalysis(rawText, previousSubscriptions = []) {
     `uncertain → GPT: ${uncertainLines.length}`
   );
 
-  // Nothing subscription-like at all → done, zero GPT calls for this PDF
-  if (subLines.length === 0 && uncertainLines.length === 0) {
-    return { subscriptions: [], stats };
+  let subscriptions = [];
+
+  // Send the filtered lines to Claude (unless there's nothing to send)
+  if (subLines.length > 0 || uncertainLines.length > 0) {
+    const result = await analyzeFilteredTransactions(subLines, uncertainLines, previousSubscriptions);
+    subscriptions = result.subscriptions || [];
+
+    // Feedback loop: save Claude's verdicts on uncertain lines as training data
+    const labeled = (result.uncertainClassifications || [])
+      .filter((c) => Number.isInteger(c.index) && c.index >= 0 && c.index < uncertainLines.length)
+      .map((c) => ({ text: uncertainLines[c.index], label: c.isSubscription === true }));
+    appendGptLabels(labeled);
+    if (labeled.length) {
+      console.log(`[ML] saved ${labeled.length} Claude-labeled lines for retraining`);
+    }
   }
 
-  const { uncertainClassifications, subscriptions } =
-    await analyzeFilteredTransactions(subLines, uncertainLines, previousSubscriptions);
-
-  // Feedback loop: save GPT's verdicts as future training data
-  const labeled = (uncertainClassifications || [])
-    .filter((c) => Number.isInteger(c.index) && c.index >= 0 && c.index < uncertainLines.length)
-    .map((c) => ({ text: uncertainLines[c.index], label: c.isSubscription === true }));
-  appendGptLabels(labeled);
-  if (labeled.length) {
-    console.log(`[ML] saved ${labeled.length} GPT-labeled lines for retraining`);
+  // Safety net: 0 subscriptions from the fast path is suspicious — the line
+  // extractor can miss subscription rows on bank PDFs that put the amount on a
+  // separate line from the merchant. Before giving up, re-read the FULL
+  // statement text with the thorough path (analyzeStatementTransactions), which
+  // isn't limited to the extracted lines. Correctness matters most here.
+  if (subscriptions.length === 0) {
+    console.log('[ML] hybrid found 0 subscriptions — falling back to full-text analysis');
+    subscriptions = (await analyzeStatementTransactions(rawText, previousSubscriptions)) || [];
+    stats.fallbackFullText = true;
   }
 
-  return { subscriptions: subscriptions || [], stats };
+  return { subscriptions, stats };
 }
 
 module.exports = {
