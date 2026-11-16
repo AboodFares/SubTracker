@@ -46,8 +46,8 @@ services:
     # These override whatever's in .env, to wire the app to THIS compose stack.
     # `environment` always wins over `env_file` in compose.
     environment:
-      # Use the in-network Mongo container instead of Atlas. Delete this line
-      # to use the MONGODB_URI from your .env (e.g. your Atlas cluster) instead.
+      # Use the in-network Mongo container. Delete this line to use the
+      # MONGODB_URI from your .env (e.g. an Atlas cluster) instead.
       MONGODB_URI: mongodb://mongo:27017/subtracker
       # The browser loads the frontend at :8080, so CORS must allow that origin.
       FRONTEND_URL: http://localhost:8080
