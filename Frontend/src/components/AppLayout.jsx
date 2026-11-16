@@ -43,7 +43,7 @@ const AppLayout = () => {
     navigate('/login');
   };
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo - text only */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-800">
@@ -117,7 +117,7 @@ const AppLayout = () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       {/* Main content */}

@@ -7,15 +7,35 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6'];
 
+const formatCurrency = (amount, currency = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+  }).format(amount);
+};
+
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 text-sm">
+        <span className="font-medium text-gray-900 dark:text-white">{payload[0].name}</span>
+        <span className="ml-2 text-gray-500 dark:text-gray-400">{formatCurrency(payload[0].value)}</span>
+      </div>
+    );
+  }
+  return null;
+};
+
 const DashboardPage = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recentChanges, setRecentChanges] = useState({});
   const prevSubsRef = useRef(null);
-  const loadStartRef = useRef(Date.now());
+  const loadStartRef = useRef(0);
 
   useEffect(() => {
+    loadStartRef.current = Date.now();
     const init = async () => {
       // Fetch current subs first — show dashboard immediately
       try {
@@ -90,13 +110,6 @@ const DashboardPage = () => {
     .slice(0, 8)
     .map(s => ({ name: s.companyName, value: s.price }));
 
-  const formatCurrency = (amount, currency = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-    }).format(amount);
-  };
-
   const formatDate = (date) => {
     if (!date) return '—';
     return format(new Date(date), 'MMM d, yyyy');
@@ -107,18 +120,6 @@ const DashboardPage = () => {
     if (change === 'new') return <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">New</span>;
     if (change === 'updated') return <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">Updated</span>;
     if (change === 'cancelled') return <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">Cancelled</span>;
-    return null;
-  };
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 text-sm">
-          <span className="font-medium text-gray-900 dark:text-white">{payload[0].name}</span>
-          <span className="ml-2 text-gray-500 dark:text-gray-400">{formatCurrency(payload[0].value)}</span>
-        </div>
-      );
-    }
     return null;
   };
 

@@ -1,18 +1,44 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { subscriptionsAPI } from '../services/api';
 import SubscriptionList from '../components/SubscriptionList';
 
+// Fetch subscriptions for a filter key ('all' = no status filter)
+const fetchSubscriptionsFor = async (filterKey) => {
+  const status = filterKey === 'all' ? null : filterKey;
+  const response = await subscriptionsAPI.getAll(status);
+  return response.data.subscriptions || [];
+};
+
 const SubscriptionsPage = () => {
   const [subscriptions, setSubscriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  // Which filter the current list was loaded for; loading until it matches
+  const [loadedFilter, setLoadedFilter] = useState(null);
+  const loading = loadedFilter !== filter;
   const [error, setError] = useState('');
   const [recentChanges, setRecentChanges] = useState({});
   const prevSubsRef = useRef(null);
   const emailsProcessed = useRef(false);
+  const filterRef = useRef(filter);
 
   useEffect(() => {
-    fetchSubscriptions();
+    filterRef.current = filter;
+    let ignore = false; // drop responses for a filter the user already left
+    fetchSubscriptionsFor(filter)
+      .then((subs) => {
+        if (ignore) return;
+        setSubscriptions(subs);
+        setError('');
+      })
+      .catch((err) => {
+        if (ignore) return;
+        console.error('Error fetching subscriptions:', err);
+        setError('Failed to load subscriptions');
+      })
+      .finally(() => {
+        if (!ignore) setLoadedFilter(filter);
+      });
+    return () => { ignore = true; };
   }, [filter]);
 
   // Process emails once on mount
@@ -32,9 +58,7 @@ const SubscriptionsPage = () => {
         const hasChanges = stats && (stats.created > 0 || stats.updated > 0 || stats.cancelled > 0);
 
         if (hasChanges) {
-          const status = filter === 'all' ? null : filter;
-          const newResponse = await subscriptionsAPI.getAll(status);
-          const newSubs = newResponse.data.subscriptions || [];
+          const newSubs = await fetchSubscriptionsFor(filterRef.current);
           const prev = prevSubsRef.current || [];
           const prevIds = new Set(prev.map(s => s.id));
           const changes = {};
@@ -64,20 +88,15 @@ const SubscriptionsPage = () => {
     processEmails();
   }, []);
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     try {
-      setLoading(true);
-      const status = filter === 'all' ? null : filter;
-      const response = await subscriptionsAPI.getAll(status);
-      setSubscriptions(response.data.subscriptions || []);
+      setSubscriptions(await fetchSubscriptionsFor(filterRef.current));
       setError('');
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       setError('Failed to load subscriptions');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
   const activeCount = subscriptions.filter(s => s.status === 'active').length;
   const cancelledCount = subscriptions.filter(s => s.status === 'cancelled').length;

@@ -9,26 +9,26 @@ const Onboarding = ({ onComplete }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const fetchLinkToken = async () => {
+      try {
+        const response = await bankAPI.createLinkToken();
+        if (response.data.success && response.data.linkToken) {
+          setLinkToken(response.data.linkToken);
+        } else {
+          setError('Failed to initialize bank connection');
+        }
+      } catch (error) {
+        console.error('Error fetching link token:', error);
+        setError('Failed to initialize bank connection. You can connect later from the dashboard.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchLinkToken();
   }, []);
 
-  const fetchLinkToken = async () => {
-    try {
-      const response = await bankAPI.createLinkToken();
-      if (response.data.success && response.data.linkToken) {
-        setLinkToken(response.data.linkToken);
-      } else {
-        setError('Failed to initialize bank connection');
-      }
-    } catch (error) {
-      console.error('Error fetching link token:', error);
-      setError('Failed to initialize bank connection. You can connect later from the dashboard.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onSuccess = async (publicToken, metadata) => {
+  const onSuccess = async (publicToken) => {
     try {
       await bankAPI.exchangeToken(publicToken);
       setStep(3); // Move to completion step

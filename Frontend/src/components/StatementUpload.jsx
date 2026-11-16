@@ -11,23 +11,25 @@ const StatementUpload = () => {
   const [loadingStatements, setLoadingStatements] = useState(true);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchStatements();
-  }, []);
-
   const fetchStatements = async () => {
     try {
-      setLoadingStatements(true);
       const response = await statementsAPI.getAll();
       if (response.data.success) {
         setStatements(response.data.statements);
       }
     } catch (err) {
       console.error('Error fetching statements:', err);
-    } finally {
-      setLoadingStatements(false);
     }
   };
+
+  useEffect(() => {
+    statementsAPI.getAll()
+      .then((response) => {
+        if (response.data.success) setStatements(response.data.statements);
+      })
+      .catch((err) => console.error('Error fetching statements:', err))
+      .finally(() => setLoadingStatements(false));
+  }, []);
 
   const handleUpload = async (file) => {
     if (!file) return;
@@ -74,7 +76,7 @@ const StatementUpload = () => {
       await statementsAPI.delete(statementId);
       setSuccessMsg('Statement deleted');
       await fetchStatements();
-    } catch (err) {
+    } catch {
       setError('Failed to delete statement');
     }
   };
@@ -188,7 +190,7 @@ const StatementUpload = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className="flex flex-col items-center gap-4 mt-40"
+        className={`flex flex-col items-center gap-4 mt-40 rounded-2xl transition-all ${dragOver ? 'ring-2 ring-indigo-500 ring-offset-8 ring-offset-transparent' : ''}`}
       >
         <div className="folder-container">
           <div className="folder">

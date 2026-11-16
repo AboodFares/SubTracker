@@ -3,6 +3,7 @@ import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook co-located with its provider
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

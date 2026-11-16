@@ -5,44 +5,47 @@ import api from '../services/api';
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const token = searchParams.get('token');
+  const paramsValid = searchParams.get('success') === 'true' && !!token;
+  const [verifyError, setVerifyError] = useState('');
+  const error = paramsValid ? verifyError : 'Authentication failed';
+  const loading = paramsValid && !verifyError;
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const success = searchParams.get('success');
+    let redirectTimer;
+    const failAndRedirect = () => {
+      redirectTimer = setTimeout(() => navigate('/login'), 3000);
+    };
 
-    if (success === 'true' && token) {
-      // Store token
-      localStorage.setItem('token', token);
-
-      // Fetch user info to store in context
-      fetchUserInfo();
-    } else {
-      setError('Authentication failed');
-      setLoading(false);
-      setTimeout(() => navigate('/login'), 3000);
+    if (!paramsValid) {
+      failAndRedirect();
+      return () => clearTimeout(redirectTimer);
     }
-  }, [searchParams, navigate]);
 
-  const fetchUserInfo = async () => {
-    try {
-      const response = await api.get('/auth/me');
+    // Store token, then fetch user info to store in context
+    localStorage.setItem('token', token);
 
-      if (response.data.success && response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        window.dispatchEvent(new Event('userUpdated'));
-        navigate('/app/dashboard');
-      } else {
-        throw new Error('Invalid response');
+    const fetchUserInfo = async () => {
+      try {
+        const response = await api.get('/auth/me');
+
+        if (response.data.success && response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          window.dispatchEvent(new Event('userUpdated'));
+          navigate('/app/dashboard');
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        setVerifyError('Failed to verify authentication');
+        failAndRedirect();
       }
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      setError('Failed to verify authentication');
-      setLoading(false);
-      setTimeout(() => navigate('/login'), 3000);
-    }
-  };
+    };
+
+    fetchUserInfo();
+    return () => clearTimeout(redirectTimer);
+  }, [paramsValid, token, navigate]);
 
   if (loading) {
     return (
